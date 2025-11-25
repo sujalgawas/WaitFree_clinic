@@ -2,17 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "firebase/auth";
 import axios from "axios";
-
-// --- Firebase Configuration (kept as-is) ---
-const firebaseConfig = {
-  apiKey: "AIzaSyAPSJEKhIKrM43ZrCL9UYd4QzRs5EQEXEc",
-  authDomain: "waitfreeclinic.firebaseapp.com",
-  projectId: "waitfreeclinic",
-  storageBucket: "waitfreeclinic.firebasestorage.app",
-  messagingSenderId: "1072458368316",
-  appId: "1:1072458368316:web:12baddf57862dfba9e0a39",
-  measurementId: "G-C2ZVQXR25Q"
-};
+import firebaseConfig from '../assets/firebaseConfig.json';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
