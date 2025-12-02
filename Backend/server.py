@@ -10,24 +10,28 @@ db = firestore.client()
 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-@app.route('/signup', methods=['POST'])
-def signup():
+@app.route('/signup-doctor', methods=['POST'])
+def signup_doctor():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
     phone_number = data.get('phone_number')
+    user_type = "doctor"
     #these fields are not finalized
     try:
         user = auth.create_user(
             email=email,
-            password=password
+            password=password,
+            phone_number = phone_number,
+            disabled = False,
         )
         
         db.collection("users").document(user.uid).set({
             "email": email,
             "phone_number": phone_number,
+            'user' : user_type
             #these fileds are not finalized
         })
         
@@ -39,8 +43,8 @@ def signup():
     except Exception as e:
         return jsonify({"error": str(e)}), 400    
 
-@app.route('/login', methods=['POST'])
-def login():
+@app.route('/login-doctor', methods=['POST'])
+def login_doctor():
     data = request.get_json()
     token = data.get('token')
     
@@ -48,6 +52,64 @@ def login():
     uid = decode_token['uid']
     
     user_doc = db.collection("users").document(uid).get()
+    if user_doc.get("user") != "doctor":
+        return jsonify({
+            "message": "Login in on Doctors login page",
+        }), 403
+        
+    if user_doc.exists:
+        user_data = user_doc.to_dict()
+        return jsonify({
+            "message": "login successful",
+            "user_data": user_data
+        }), 200
+
+
+@app.route('/signup-patient', methods=['POST'])
+def signup_patient():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    phone_number = data.get('phone_number')
+    user_type = "patient"
+    #these fields are not finalized
+    try:
+        user = auth.create_user(
+            email=email,
+            password=password,
+            phone_number = phone_number,
+            disabled = False,
+        )
+        
+        db.collection("users").document(user.uid).set({
+            "email": email,
+            "phone_number": phone_number,
+            'user' : user_type
+            #these fileds are not finalized
+        })
+        
+        return jsonify({
+            "message": "user created successfully",
+            "uid": user.uid
+        }), 201
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400    
+
+@app.route('/login-patient', methods=['POST'])
+def login_patient():
+    data = request.get_json()
+    token = data.get('token')
+    
+    decode_token = auth.verify_id_token(token)
+    uid = decode_token['uid']
+    
+    user_doc = db.collection("users").document(uid).get()
+    if user_doc.get("user") != "patient":
+        return jsonify({
+            "message": "Login in on Doctors login page",
+        }), 403
+        
     if user_doc.exists:
         user_data = user_doc.to_dict()
         return jsonify({
@@ -60,4 +122,4 @@ def home():
     return jsonify({"message": "Welcome to the WaitFree Clinic Backend!"})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
