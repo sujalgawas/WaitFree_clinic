@@ -23,7 +23,7 @@ export default function Header({
             {!isLoggedIn ? (
               <>
                 <button onClick={() => setCurrentPage('login')} className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Login</button>
-                <button onClick={() => setCurrentPage('register')} className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all">Get Started</button>
+                <button onClick={() => setCurrentPage('login')} className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all">Get Started</button>
               </>
             ) : (
               <div className="flex items-center gap-4">

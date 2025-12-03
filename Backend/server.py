@@ -12,6 +12,14 @@ db = firestore.client()
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+@app.rounte('/search',methods = ['POST'])
+def search():
+    pass
+
+@app.route('/doctor-form',methods = ['POST'])
+def doctor_form():
+    pass
+
 @app.route('/signup-doctor', methods=['POST'])
 def signup_doctor():
     data = request.get_json()
@@ -107,7 +115,7 @@ def login_patient():
     user_doc = db.collection("users").document(uid).get()
     if user_doc.get("user") != "patient":
         return jsonify({
-            "message": "Login in on Doctors login page",
+            "message": "Login in on Patient login page",
         }), 403
         
     if user_doc.exists:
