@@ -16,6 +16,36 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 def get_username_from_email(email):
     return email.split('@')[0] if email else "User"
 
+# Helper function 
+def token_to_uid(token):
+    try:
+        decoded_token = auth.verify_id_token(token)
+        return decoded_token['uid']
+    except Exception as e:
+        print(f"Token verification failed: {e}")
+        return None
+
+@app.route('/verify-token', methods=['POST'])
+def verify_token():
+    data = request.get_json()
+    token = data.get('token')
+    
+    if not token:
+        return jsonify({"message": "No token provided", "verified": False}), 400
+
+    uid = token_to_uid(token)
+    
+    if uid:
+        return jsonify({
+            "message": "Token is valid",
+            "verified": True
+        }), 200
+    else:
+        return jsonify({
+            "message": "Token is expired or invalid", 
+            "verified": False
+        }), 401
+        
 @app.route('/search', methods=['POST'])
 def search():
     pass

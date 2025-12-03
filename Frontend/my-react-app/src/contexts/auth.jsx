@@ -1,24 +1,71 @@
-import React, { createContext, useState, useEffect, Children } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
-export const AuthContext = createContext(null);
+export const AuthContext = createContext();
 
-export const AuthProvider = ({Children}) =>{
-    const [islogin, setlogin] = useState(false);
-    const [user, setuser] = useState(null);
-    const [userName, setuserName] = useState(null);
+export const AuthProvider = ({ children }) => {
+    const [isLogin, setLogin] = useState(false);
+    const [user, setUser] = useState(null);
+    const [userName, setUserName] = useState(null);
+    const [loading, setLoading] = useState(true); 
 
-    useEffect(() =>{
-        const token = localStorage.getItem('token');
-        const user = localStorage.getItem('user');
-        const user_name = localStorage.getItem('userName');
-        if(token){
-            setlogin(true);
-            setuser(user);
-            setuserName(user_name);
-        }
-    },[]);
+    useEffect(() => {
+        const verifyUserToken = async () => {
+            const token = localStorage.getItem('token');
+            const storedUser = localStorage.getItem('user');
+            const storedUserName = localStorage.getItem('userName');
 
-    return <Auth.conetex.Provider value = {value}>{childer}</Auth.conetex.Provider>
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const response = await axios.post('http://127.0.0.1:5000/verify-token', { 
+                    token: token 
+                });
+
+                if (response.data.verified === true) {
+                    setLogin(true);
+                    setUser(storedUser);
+                    setUserName(storedUserName);
+                } else {
+                    handleLogout();
+                }
+
+            } catch (error) {
+                console.log("Token verification failed (Network or 401):", error);
+                handleLogout();
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        verifyUserToken();
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userName');
+        setLogin(false);
+        setUser(null);
+        setUserName(null);
+    };
+
+    const value = {
+        isLogin,
+        user,
+        userName,
+        setLogin, 
+        setUser,
+        setUserName,
+        handleLogout
+    };
+
+    return (
+        <AuthContext.Provider value={value}>
+            {!loading && children} 
+        </AuthContext.Provider>
+    );
 };
-
-export default AuthContext;
