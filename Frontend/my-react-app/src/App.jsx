@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/auth'; // Importing from your specified path
+
 import Header from './components/Header';
 import LocationPopup from './components/LocationPopup';
 
 // Import Pages
 import Home from './pages/Home';
-import Login from './components/Login'; // Or './pages/Login' if you move it
+import Login from './components/Login'; 
 import Register from './pages/Register';
 import DoctorLogin from './pages/DoctorLogin';
 import Search from './pages/Search';
@@ -13,8 +16,11 @@ import Confirmation from './pages/Confirmation';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 
-export default function App() {
-  const [currentPage, setCurrentPage] = useState('home');
+// We separate the Logic into a child component so we can use 'useNavigate'
+function MainLayout() {
+  const navigate = useNavigate();
+
+  // --- Global State ---
   const [showLocationPopup, setShowLocationPopup] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,19 +34,27 @@ export default function App() {
   });
   const [appointments, setAppointments] = useState([]);
 
-  // Show location popup once when user lands on home (if no location)
-  useEffect(() => {
-    if (currentPage === 'home' && !userLocation) {
-      const t = setTimeout(() => setShowLocationPopup(true), 800);
-      return () => clearTimeout(t);
-    }
-  }, [currentPage, userLocation]);
+  // --- "Shim" Function to support your existing components ---
+  // This translates your old "setCurrentPage" calls into Router navigation
+  const setCurrentPage = (page) => {
+    if (page === 'home') navigate('/');
+    else navigate(`/${page}`);
+  };
 
-  // toggle dark mode on body
+  // Toggle dark mode
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [darkMode]);
+
+  // Location Popup Logic
+  useEffect(() => {
+    // Check if we are on the home page (root path)
+    if (window.location.pathname === '/' && !userLocation) {
+      const t = setTimeout(() => setShowLocationPopup(true), 800);
+      return () => clearTimeout(t);
+    }
+  }, [userLocation]);
 
   const handleLocationAllow = () => {
     if (navigator.geolocation) {
@@ -51,7 +65,7 @@ export default function App() {
             lng: position.coords.longitude
           });
           setShowLocationPopup(false);
-          setCurrentPage('search');
+          navigate('/search'); // Use router navigation
         },
         () => {
           alert('Location access denied. Please enter your area manually.');
@@ -78,23 +92,26 @@ export default function App() {
         type: Math.random() > 0.5 ? 'video' : 'in-person'
       };
       setAppointments(prev => [newAppointment, ...prev]);
-      // reset booking form
+      
+      // Reset form
       setBookingData({ name: '', mobile: '', age: '', problem: '', slot: '' });
       setSelectedDoctor(null);
-      setCurrentPage('confirmation');
+      
+      // Navigate to confirmation
+      navigate('/confirmation'); 
     } else {
       alert('Please fill all required fields (name, mobile, slot).');
     }
   };
 
   return (
-    <div className={`${darkMode ? 'dark' : ''}`}>
+    <div className={`${darkMode ? 'dark' : ''} min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200`}>
       <Header 
         darkMode={darkMode} 
         setDarkMode={setDarkMode}
         isLoggedIn={isLoggedIn}
         setIsLoggedIn={setIsLoggedIn}
-        setCurrentPage={setCurrentPage}
+        setCurrentPage={setCurrentPage} // Passed down so Header links still work
         showMobileMenu={showMobileMenu}
         setShowMobileMenu={setShowMobileMenu}
       />
@@ -107,89 +124,105 @@ export default function App() {
         />
       )}
 
-      {currentPage === 'home' && (
-        <Home 
-          darkMode={darkMode}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          setCurrentPage={setCurrentPage}
-          setSelectedDoctor={setSelectedDoctor}
-          setBookingData={setBookingData}
-        />
-      )}
+      {/* React Router Routes */}
+      <Routes>
+        <Route path="/" element={
+          <Home 
+            darkMode={darkMode}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            setCurrentPage={setCurrentPage}
+            setSelectedDoctor={setSelectedDoctor}
+            setBookingData={setBookingData}
+          />
+        } />
 
-      {currentPage === 'login' && (
-        <Login 
-          darkMode={darkMode}
-          setIsLoggedIn={setIsLoggedIn}
-          setUserType={setUserType}
-          setCurrentPage={setCurrentPage}
-        />
-      )}
+        <Route path="/login" element={
+          <Login 
+            darkMode={darkMode}
+            setIsLoggedIn={setIsLoggedIn}
+            setUserType={setUserType}
+            setCurrentPage={setCurrentPage}
+          />
+        } />
 
-      {currentPage === 'register' && (
-        <Register 
-          darkMode={darkMode}
-          setIsLoggedIn={setIsLoggedIn}
-          setUserType={setUserType}
-          setCurrentPage={setCurrentPage}
-        />
-      )}
+        <Route path="/register" element={
+          <Register 
+            darkMode={darkMode}
+            setIsLoggedIn={setIsLoggedIn}
+            setUserType={setUserType}
+            setCurrentPage={setCurrentPage}
+          />
+        } />
 
-      {currentPage === 'doctor-login' && (
-        <DoctorLogin 
-          darkMode={darkMode}
-          setIsLoggedIn={setIsLoggedIn}
-          setUserType={setUserType}
-          setCurrentPage={setCurrentPage}
-        />
-      )}
+        <Route path="/doctor-login" element={
+          <DoctorLogin 
+            darkMode={darkMode}
+            setIsLoggedIn={setIsLoggedIn}
+            setUserType={setUserType}
+            setCurrentPage={setCurrentPage}
+          />
+        } />
 
-      {currentPage === 'search' && (
-        <Search 
-          darkMode={darkMode}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          setCurrentPage={setCurrentPage}
-          setSelectedDoctor={setSelectedDoctor}
-          setBookingData={setBookingData}
-        />
-      )}
+        <Route path="/search" element={
+          <Search 
+            darkMode={darkMode}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            setCurrentPage={setCurrentPage}
+            setSelectedDoctor={setSelectedDoctor}
+            setBookingData={setBookingData}
+          />
+        } />
 
-      {currentPage === 'profile' && (
-        <Profile 
-          darkMode={darkMode}
-          selectedDoctor={selectedDoctor}
-          setCurrentPage={setCurrentPage}
-          bookingData={bookingData}
-          setBookingData={setBookingData}
-          handleBookAppointment={handleBookAppointment}
-        />
-      )}
+        <Route path="/profile" element={
+          <Profile 
+            darkMode={darkMode}
+            selectedDoctor={selectedDoctor}
+            setCurrentPage={setCurrentPage}
+            bookingData={bookingData}
+            setBookingData={setBookingData}
+            handleBookAppointment={handleBookAppointment}
+          />
+        } />
 
-      {currentPage === 'confirmation' && (
-        <Confirmation 
-          darkMode={darkMode}
-          appointments={appointments}
-          setCurrentPage={setCurrentPage}
-        />
-      )}
+        <Route path="/confirmation" element={
+          <Confirmation 
+            darkMode={darkMode}
+            appointments={appointments}
+            setCurrentPage={setCurrentPage}
+          />
+        } />
 
-      {currentPage === 'dashboard' && (
-        <Dashboard 
-          darkMode={darkMode}
-          isLoggedIn={isLoggedIn}
-          appointments={appointments}
-          setCurrentPage={setCurrentPage}
-        />
-      )}
+        <Route path="/dashboard" element={
+          <Dashboard 
+            darkMode={darkMode}
+            isLoggedIn={isLoggedIn}
+            appointments={appointments}
+            setCurrentPage={setCurrentPage}
+          />
+        } />
 
-      {currentPage === 'admin-dashboard' && (
-        <AdminDashboard 
-          darkMode={darkMode}
-          appointments={appointments}
-        />
-      )}
+        <Route path="/admin-dashboard" element={
+          <AdminDashboard 
+            darkMode={darkMode}
+            appointments={appointments}
+          />
+        } />
+
+        {/* Fallback route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    //<AuthProvider>
+      <Router>
+        <MainLayout />
+      </Router>
+    //</AuthProvider>
   );
 }

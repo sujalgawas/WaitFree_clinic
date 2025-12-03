@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "firebase/auth";
 import axios from "axios";
-import firebaseConfig from '../assets/firebaseConfig.json'; // Ensure this path is correct
+import firebaseConfig from '../assets/firebaseConfig.json'; 
 
-// Initialize Firebase (Check if app is already initialized to avoid errors)
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
@@ -14,25 +13,21 @@ export default function DoctorLogin() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   
-  // Form inputs
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   
-  // UI state
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState(null);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   
-  // Validation errors
   const [validationErrors, setValidationErrors] = useState({});
   const [touched, setTouched] = useState({});
   
   const BACKEND_URL = 'http://192.168.0.5:5000';
 
-  // Real-time validation
   useEffect(() => {
     const errors = {};
     if (touched.email && email) {
@@ -52,7 +47,6 @@ export default function DoctorLogin() {
     setValidationErrors(errors);
   }, [email, password, confirmPassword, phoneNumber, touched, view]);
 
-  // Error Message Helper
   const getFirebaseErrorMessage = (errorCode) => {
     const errorMessages = {
       'auth/invalid-email': 'Invalid email address format.',
@@ -88,18 +82,21 @@ export default function DoctorLogin() {
     setError(null);
     
     try {
-      // 1. Authenticate with Firebase
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       const token = await user.getIdToken(true);
       
-      // 2. Call DOCTOR specific login endpoint
       const response = await axios.post(`${BACKEND_URL}/login-doctor`, { token });
+      
+      // Save to LocalStorage
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", response.data.user);
+      localStorage.setItem("userName", response.data.userName);
+      
       setUserData(response.data.user_data);
       
     } catch (error) {
       console.error("Doctor Login Error:", error);
-      // Handle backend custom errors (like "Login on Doctors page") or Firebase errors
       const errorMessage = error.response?.data?.message || error.response?.data?.error || getFirebaseErrorMessage(error.code);
       setError(errorMessage);
     } finally {
@@ -130,20 +127,26 @@ export default function DoctorLogin() {
     setError(null);
     
     try {
-      // 1. Create User in Backend (Doctor Endpoint)
+      // 1. Create User in Backend
       await axios.post(`${BACKEND_URL}/signup-doctor`, {
         email,
         password,
         phone_number: phoneNumber
       });
       
-      // 2. Sign in immediately to get token
+      // 2. Sign in immediately
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       const token = await user.getIdToken(true);
       
-      // 3. Verify Login via Backend
+      // 3. Login to get details
       const response = await axios.post(`${BACKEND_URL}/login-doctor`, { token });
+      
+      // Save to LocalStorage
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", response.data.user);
+      localStorage.setItem("userName", response.data.userName);
+
       setUserData(response.data.user_data);
       
     } catch (error) {
@@ -184,6 +187,7 @@ export default function DoctorLogin() {
 
   const handleLogout = () => {
     signOut(auth).then(() => {
+      // Clear State
       setUserData(null);
       setEmail('');
       setPassword('');
@@ -193,6 +197,8 @@ export default function DoctorLogin() {
       setTouched({});
       setValidationErrors({});
       setView('login');
+      // Clear Storage
+      localStorage.clear();
     }).catch((error) => {
       setError(getFirebaseErrorMessage(error.code));
     });
@@ -207,7 +213,6 @@ export default function DoctorLogin() {
     setShowConfirmPassword(false);
   };
 
-  // --- RENDER: LOGGED IN ---
   if (userData) {
     return (
       <div className="min-h-screen font-inter bg-gradient-to-br from-green-50 to-teal-100 flex items-center justify-center p-4">
@@ -233,6 +238,10 @@ export default function DoctorLogin() {
             )}
              <p className="text-sm text-gray-500 mt-3 mb-1">Role</p>
              <p className="text-gray-700 font-bold uppercase">{userData.user || 'Doctor'}</p>
+
+             {/* Displaying stored name */}
+             <p className="text-sm text-gray-500 mt-3 mb-1">Username</p>
+             <p className="text-gray-700">{localStorage.getItem("userName") || userData.userName}</p>
           </div>
           
           <button onClick={handleLogout} className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300 font-medium shadow-md">
@@ -243,16 +252,12 @@ export default function DoctorLogin() {
     );
   }
 
-  // --- RENDER: RESET PASSWORD MODAL (Same as original) ---
   if (showResetModal) {
-    // ... (This part is identical to your original code, keeping it concise here for brevity. 
-    // You should copy the exact return block for showResetModal from your original file)
     return (
         <div className="min-h-screen font-inter bg-gradient-to-br from-green-50 to-teal-100 flex items-center justify-center p-4">
             <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Reset Password</h2>
                 <p className="text-gray-600 text-sm mb-6">Enter your email address and we'll send you a link to reset your password.</p>
-                {/* Simplified for brevity - copy form from original code */}
                  <form onSubmit={handleResetPassword}>
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 border rounded-lg mb-4" placeholder="Email" required />
                     <button type="submit" className="w-full bg-teal-600 text-white py-3 rounded-lg">Send Reset Link</button>
@@ -263,17 +268,14 @@ export default function DoctorLogin() {
     )
   }
 
-  // --- RENDER: LOGIN / SIGNUP FORM ---
   return (
     <div className="min-h-screen font-inter bg-gradient-to-br from-green-50 to-teal-100 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
         
-        {/* Header specifically for Doctors */}
         <div className="text-center mb-6">
             <h1 className="text-teal-700 font-bold text-xl uppercase tracking-wider">Doctor Portal</h1>
         </div>
 
-        {/* Tabs */}
         <div className="flex mb-8 bg-gray-100 rounded-lg p-1">
           <button
             type="button"
@@ -374,7 +376,6 @@ export default function DoctorLogin() {
             </div>
           )}
 
-          {/* Forgot Password Link */}
           {view === 'login' && (
             <div className="mb-6 text-right">
               <button type="button" onClick={() => setShowResetModal(true)} className="text-sm text-teal-600 hover:text-teal-700 font-medium hover:underline">
@@ -383,14 +384,12 @@ export default function DoctorLogin() {
             </div>
           )}
 
-          {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
               <p className="text-red-800 text-sm">{error}</p>
             </div>
           )}
           
-          {/* Submit Button */}
           <button
             type="submit" disabled={loading}
             className="w-full bg-teal-600 text-white py-3 px-4 rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-300 transition duration-300 disabled:bg-gray-400 font-medium shadow-md"

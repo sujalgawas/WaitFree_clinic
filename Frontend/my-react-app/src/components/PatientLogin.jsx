@@ -81,6 +81,12 @@ export default function PatientLogin() {
       
       // CALL PATIENT ENDPOINT
       const response = await axios.post(`${BACKEND_URL}/login-patient`, { token });
+      
+      // Save to LocalStorage
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", response.data.user);
+      localStorage.setItem("userName", response.data.userName);
+      
       setUserData(response.data.user_data);
       
     } catch (error) {
@@ -114,19 +120,26 @@ export default function PatientLogin() {
     setError(null);
     
     try {
-      // CALL PATIENT ENDPOINT
+      // 1. Create User in Backend
       await axios.post(`${BACKEND_URL}/signup-patient`, {
         email,
         password,
         phone_number: phoneNumber
       });
       
+      // 2. Sign in with Firebase
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       const token = await user.getIdToken(true);
       
-      // CALL PATIENT ENDPOINT
+      // 3. Log in to Backend to get details
       const response = await axios.post(`${BACKEND_URL}/login-patient`, { token });
+      
+      // Save to LocalStorage
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", response.data.user);
+      localStorage.setItem("userName", response.data.userName);
+
       setUserData(response.data.user_data);
       
     } catch (error) {
@@ -138,7 +151,6 @@ export default function PatientLogin() {
     }
   };
 
-  // ... (Reset password and Logout are same logic, just keeping context)
   const handleResetPassword = async (e) => {
     e.preventDefault();
     if (!email) return;
@@ -152,10 +164,13 @@ export default function PatientLogin() {
 
   const handleLogout = () => {
     signOut(auth).then(() => {
+      // Clear State
       setUserData(null);
       setEmail('');
       setPassword('');
       setView('login');
+      // Clear Storage
+      localStorage.clear();
     }).catch((error) => console.error(error));
   };
 
@@ -174,7 +189,6 @@ export default function PatientLogin() {
         <div className="bg-white p-8 rounded-2xl shadow-xl text-center w-full max-w-md">
           <div className="mb-6">
             <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-               {/* User Icon */}
               <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
@@ -193,6 +207,10 @@ export default function PatientLogin() {
             )}
             <p className="text-sm text-gray-500 mt-3 mb-1">Role</p>
             <p className="text-gray-700 font-bold uppercase">{userData.user || 'Patient'}</p>
+            
+            {/* Displaying stored name */}
+            <p className="text-sm text-gray-500 mt-3 mb-1">Username</p>
+            <p className="text-gray-700">{localStorage.getItem("userName") || userData.userName}</p>
           </div>
           <button onClick={handleLogout} className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300 font-medium shadow-md">
             Logout
