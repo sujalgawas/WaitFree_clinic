@@ -2,6 +2,7 @@ import firebase_admin
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from firebase_admin import credentials, initialize_app, firestore, auth
+import json
 
 cred = credentials.Certificate("./serviceAccountKey.json")
 initialize_app(cred)
@@ -24,6 +25,94 @@ def token_to_uid(token):
     except Exception as e:
         print(f"Token verification failed: {e}")
         return None
+
+import json
+
+@app.route('/doctor-form', methods=['POST'])
+def doctor_form():
+    token = request.form.get('token')
+    
+    # Verify token
+    uid = token_to_uid(token)
+    if not uid:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    degree_file = request.files.get('degree_proof')
+    
+    degree_url = "pending_upload" 
+    if degree_file:
+        print(f"File received: {degree_file.filename}")
+
+    full_name = request.form.get('full_name')
+    specialization = request.form.get('specialization')
+    reg_number = request.form.get('reg_number')
+    medical_council = request.form.get('medical_council')
+    reg_year = request.form.get('reg_year')
+    experience_years = request.form.get('experience_years')
+    
+    clinic_name = request.form.get('clinic_name')
+    address_line = request.form.get('address_line')
+    
+    city = request.form.get('city', '').lower().strip() 
+    zip_code = request.form.get('zip_code')
+    google_maps_link = request.form.get('google_maps_link')
+    
+    consultation_fee = request.form.get('consultation_fee')
+    morning_start = request.form.get('morning_start')
+    morning_end = request.form.get('morning_end')
+    evening_start = request.form.get('evening_start')
+    evening_end = request.form.get('evening_end')
+
+    days_open_str = request.form.get('days_open')
+    days_open = json.loads(days_open_str) if days_open_str else {}
+
+    doctor_data = {
+        "full_name": full_name,
+        "specialization": specialization,
+        "city": city,
+        "consultation_fee": consultation_fee,
+        "is_verified": False,
+        "profile_completed": True,
+
+        "personal_details": {
+            "reg_number": reg_number,
+            "medical_council": medical_council,
+            "reg_year": reg_year,
+            "degree_proof_url": degree_url, 
+            "experience_years": experience_years
+        },
+        
+        "clinic_details": {
+            "name": clinic_name,
+            "address": address_line,
+            "zip_code": zip_code,
+            "google_maps_link": google_maps_link
+        },
+        
+        "availability": {
+            "days_open": days_open,
+            "morning_shift": {
+                "start": morning_start,
+                "end": morning_end
+            },
+            "evening_shift": {
+                "start": evening_start,
+                "end": evening_end
+            }
+        }
+    }
+
+    try:
+        db.collection('doctors').document(uid).set(doctor_data)
+        
+        return jsonify({
+            "message": "Doctor profile saved successfully",
+            "uid": uid
+        }), 200
+
+    except Exception as e:
+        print(f"Database Error: {e}")
+        return jsonify({"error": "Failed to save profile"}), 500
 
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
@@ -48,10 +137,6 @@ def verify_token():
         
 @app.route('/search', methods=['POST'])
 def search():
-    pass
-
-@app.route('/doctor-form', methods=['POST'])
-def doctor_form():
     pass
 
 # --- DOCTOR ROUTES ---

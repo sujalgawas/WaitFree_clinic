@@ -15,6 +15,7 @@ import Profile from './pages/Profile';
 import Confirmation from './pages/Confirmation';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import DoctorOnboarding from './pages/DoctorOnBoarding';
 
 // We separate the Logic into a child component so we can use 'useNavigate'
 function MainLayout() {
@@ -128,6 +129,17 @@ function MainLayout() {
       <Routes>
         <Route path="/" element={
           <Home 
+            darkMode={darkMode}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            setCurrentPage={setCurrentPage}
+            setSelectedDoctor={setSelectedDoctor}
+            setBookingData={setBookingData}
+          />
+        } />
+
+        <Route path="/doctor-form" element={
+          <DoctorOnboarding 
             darkMode={darkMode}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
