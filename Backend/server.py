@@ -28,11 +28,80 @@ def token_to_uid(token):
 
 import json
 
+@app.route('/patient-form', methods=['POST'])
+def patient_form():
+    token = request.form.get('token')
+    
+    uid = token_to_uid(token)
+    if not uid:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    profile_file = request.files.get('profile_image')
+    
+    profile_url = "default_avatar" 
+    if profile_file:
+        print(f"File received: {profile_file.filename}")
+        profile_url = "pending_upload_url"
+
+    full_name = request.form.get('full_name')
+    date_of_birth = request.form.get('date_of_birth')
+    gender = request.form.get('gender')
+    blood_group = request.form.get('blood_group')
+    height = request.form.get('height') # in cm
+    weight = request.form.get('weight') # in kg
+
+    emergency_name = request.form.get('emergency_name')
+    emergency_phone = request.form.get('emergency_phone')
+    emergency_relation = request.form.get('emergency_relation')
+
+    allergies_str = request.form.get('allergies')
+    chronic_conditions_str = request.form.get('chronic_conditions')
+    
+    allergies = json.loads(allergies_str) if allergies_str else []
+    chronic_conditions = json.loads(chronic_conditions_str) if chronic_conditions_str else []
+
+    patient_data = {
+        "full_name": full_name,
+        "email": request.form.get('email'),
+        "profile_completed": True,
+        "profile_image": profile_url,
+
+        "personal_details": {
+            "dob": date_of_birth,
+            "gender": gender,
+            "blood_group": blood_group,
+            "height": height,
+            "weight": weight
+        },
+
+        "medical_profile": {
+            "allergies": allergies,
+            "chronic_conditions": chronic_conditions,
+        },
+
+        "emergency_contact": {
+            "name": emergency_name,
+            "phone": emergency_phone,
+            "relation": emergency_relation
+        }
+    }
+
+    try:
+        db.collection('patients').document(uid).set(patient_data, merge=True)
+        
+        return jsonify({
+            "message": "Patient profile saved successfully",
+            "uid": uid
+        }), 200
+
+    except Exception as e:
+        print(f"Database Error: {e}")
+        return jsonify({"error": "Failed to save profile"}), 500
+
 @app.route('/doctor-form', methods=['POST'])
 def doctor_form():
     token = request.form.get('token')
     
-    # Verify token
     uid = token_to_uid(token)
     if not uid:
         return jsonify({"message": "Unauthorized"}), 401
