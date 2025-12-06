@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/auth'; // Importing from your specified path
+import axios from 'axios'; // Make sure to import axios
+import { AuthProvider } from './contexts/auth'; 
 
 import Header from './components/Header';
 import LocationPopup from './components/LocationPopup';
@@ -17,8 +18,47 @@ import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import DoctorOnboarding from './pages/DoctorOnBoarding';
 import PatientOnboarding from './pages/PatientOnBoarding';
+import API_KEYS from './assets/API_keys.json';
 
-// We separate the Logic into a child component so we can use 'useNavigate'
+const getAddressFromCoordinates = async (lat, lng) => {
+  const GOOGLE_API_KEY = API_KEYS.GOOGLE_API_KEY; 
+  
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`
+    );
+    const data = await response.json();
+    
+    if (data.results && data.results.length > 0) {
+      const addressComponents = data.results[0].address_components;
+      let city = '';
+      let zip = '';
+      
+      addressComponents.forEach(comp => {
+        if (comp.types.includes('locality')) city = comp.long_name;
+        if (comp.types.includes('postal_code')) zip = comp.long_name;
+      });
+
+      if (!city) {
+         const adminArea = addressComponents.find(c => c.types.includes('administrative_area_level_2'));
+         if(adminArea) city = adminArea.long_name;
+      }
+
+      return {
+        formatted_address: data.results[0].formatted_address,
+        city: city || 'Unknown',
+        zip_code: zip,
+        lat: lat,
+        lng: lng
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Geocoding error:", error);
+    return null;
+  }
+};
+
 function MainLayout() {
   const navigate = useNavigate();
 
@@ -36,8 +76,7 @@ function MainLayout() {
   });
   const [appointments, setAppointments] = useState([]);
 
-  // --- "Shim" Function to support your existing components ---
-  // This translates your old "setCurrentPage" calls into Router navigation
+  // Shim for old components
   const setCurrentPage = (page) => {
     if (page === 'home') navigate('/');
     else navigate(`/${page}`);
@@ -49,27 +88,66 @@ function MainLayout() {
     else document.documentElement.classList.remove('dark');
   }, [darkMode]);
 
-  // Location Popup Logic
+  // --- LOCATION LOGIC ---
   useEffect(() => {
-    // Check if we are on the home page (root path)
-    if (window.location.pathname === '/' && !userLocation) {
-      const t = setTimeout(() => setShowLocationPopup(true), 800);
-      return () => clearTimeout(t);
+    // 1. Check LocalStorage on startup
+    const savedLocation = localStorage.getItem('userLocation');
+    
+    if (savedLocation) {
+      // If we have it, load it into state
+      const parsedLoc = JSON.parse(savedLocation);
+      setUserLocation(parsedLoc);
+      // Pre-fill search if on home/search page
+      if(!searchQuery) setSearchQuery(parsedLoc.city);
+    } else {
+      // 2. If NOT in LocalStorage, show popup after delay (only on home page)
+      if (window.location.pathname === '/') {
+        const t = setTimeout(() => setShowLocationPopup(true), 1000);
+        return () => clearTimeout(t);
+      }
     }
-  }, [userLocation]);
+  }, []); // Run once on mount
 
   const handleLocationAllow = () => {
     if (navigator.geolocation) {
+      // Show loading state if you have one, or just wait
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-          setShowLocationPopup(false);
-          navigate('/search'); // Use router navigation
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          
+          // 1. Get readable address from Google API
+          const locationData = await getAddressFromCoordinates(lat, lng);
+          
+          if (locationData) {
+            // Update State
+            setUserLocation(locationData);
+            setSearchQuery(locationData.city);
+            
+            // 2. Save to LocalStorage
+            localStorage.setItem('userLocation', JSON.stringify(locationData));
+            
+            // 3. Send to Backend (to save in DB)
+            try {
+                const token = localStorage.getItem('token');
+                // We send it even if token is null (guest mode backend handling)
+                await axios.post('http://127.0.0.1:5000/update-location', { 
+                    ...locationData, 
+                    token: token 
+                });
+            } catch (err) {
+                console.error("Failed to sync location to backend", err);
+            }
+
+            setShowLocationPopup(false);
+            //navigate('/search'); 
+          } else {
+            alert("Detected coordinates, but Google couldn't find the City address.");
+            setShowLocationPopup(false);
+          }
         },
-        () => {
+        (error) => {
+          console.error("Geolocation denied:", error);
           alert('Location access denied. Please enter your area manually.');
           setShowLocationPopup(false);
         }
@@ -94,12 +172,8 @@ function MainLayout() {
         type: Math.random() > 0.5 ? 'video' : 'in-person'
       };
       setAppointments(prev => [newAppointment, ...prev]);
-      
-      // Reset form
       setBookingData({ name: '', mobile: '', age: '', problem: '', slot: '' });
       setSelectedDoctor(null);
-      
-      // Navigate to confirmation
       navigate('/confirmation'); 
     } else {
       alert('Please fill all required fields (name, mobile, slot).');
@@ -113,7 +187,7 @@ function MainLayout() {
         setDarkMode={setDarkMode}
         isLoggedIn={isLoggedIn}
         setIsLoggedIn={setIsLoggedIn}
-        setCurrentPage={setCurrentPage} // Passed down so Header links still work
+        setCurrentPage={setCurrentPage} 
         showMobileMenu={showMobileMenu}
         setShowMobileMenu={setShowMobileMenu}
       />
@@ -126,7 +200,6 @@ function MainLayout() {
         />
       )}
 
-      {/* React Router Routes */}
       <Routes>
         <Route path="/" element={
           <Home 
@@ -234,7 +307,6 @@ function MainLayout() {
           />
         } />
 
-        {/* Fallback route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

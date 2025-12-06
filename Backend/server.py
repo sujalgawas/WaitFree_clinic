@@ -208,6 +208,43 @@ def verify_token():
 def search():
     pass
 
+@app.route('/update-location', methods=['POST'])
+def update_location():
+    data = request.get_json()
+    token = data.get('token')
+    
+    uid = None
+    if token:
+        uid = token_to_uid(token)
+    
+    lat = data.get('lat')
+    lng = data.get('lng')
+    city = data.get('city', '').lower().strip()
+    zip_code = data.get('zip_code')
+    address = data.get('formatted_address')
+    
+    location_data = {
+        "last_known_location": {
+            "lat": lat,
+            "lng": lng,
+            "city": city,
+            "zip_code": zip_code,
+            "address": address,
+            "updated_at": firestore.SERVER_TIMESTAMP
+        }
+    }
+
+    try:
+        if uid:
+            db.collection('patients').document(uid).set(location_data, merge=True)
+            return jsonify({"message": "Location updated for user"}), 200
+        else:
+            return jsonify({"message": "Location received (Guest)"}), 200
+
+    except Exception as e:
+        print(f"Location Update Error: {e}")
+        return jsonify({"error": "Failed to update location"}), 500
+
 # --- DOCTOR ROUTES ---
 @app.route('/signup-doctor', methods=['POST'])
 def signup_doctor():
