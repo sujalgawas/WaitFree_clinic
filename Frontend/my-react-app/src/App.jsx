@@ -12,6 +12,7 @@ import LandingPage from './pages/LandingPage';
 import Login from './components/Login'; 
 import Register from './pages/Register';
 import DoctorLogin from './components/DoctorLogin';
+import PatientLogin from './components/PatientLogin';
 import Search from './pages/Search';
 import Profile from './pages/Profile';
 import Confirmation from './pages/Confirmation';
@@ -225,6 +226,7 @@ function MainLayout() {
         {/* Authentication Routes */}
         <Route path="/login" element={<Login darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/register" element={<Register darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
+        <Route path="/patient-login" element={<PatientLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/doctor-login" element={<DoctorLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/auth-required" element={<AuthRequired darkMode={darkMode} />} />
         

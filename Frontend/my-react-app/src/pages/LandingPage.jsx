@@ -99,7 +99,7 @@ const LandingPage = ({ darkMode }) => {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <button
-                onClick={() => navigate('/register')}
+                onClick={() => navigate('/patient-login')}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2 transition-all transform hover:scale-105 shadow-lg"
               >
                 Start Your Free Trial
