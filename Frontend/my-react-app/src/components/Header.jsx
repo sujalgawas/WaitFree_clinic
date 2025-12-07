@@ -1,6 +1,10 @@
 import React, { useContext } from 'react';
 import { Moon, Sun, Menu, X, User, LogOut, LogIn } from 'lucide-react';
 import { AuthContext } from '../contexts/auth';
+import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+
 
 export default function Header({ 
   darkMode, 
@@ -16,7 +20,36 @@ export default function Header({
     logout();
     setShowMobileMenu(false);
   };
+  {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [scrollToId, setScrollToId] = useState(null);
 
+  // Effect to scroll after navigation
+  useEffect(() => {
+    if (scrollToId) {
+      const section = document.getElementById(scrollToId);
+      if (section) {
+        section.scrollIntoView({ behavior: "smooth" });
+        setScrollToId(null);
+      }
+    }
+  }, [scrollToId, location]);
+
+  const handleScroll = (id) => {
+    const section = document.getElementById(id);
+
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    } else {
+      setScrollToId(id);
+      if (location.pathname !== "/") {
+        navigate("/");
+      }
+    }
+  };
+
+  
   return (
     <header className={`fixed w-full top-0 z-50 backdrop-blur-lg border-b transition-colors ${
       darkMode 
@@ -25,21 +58,42 @@ export default function Header({
     }`}>
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo */}
-          <div 
-            onClick={() => setCurrentPage('home')} 
-            className="text-2xl font-bold cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
-          >
-            WaitFreeClinic
-          </div>
+       <div 
+  onClick={() => setCurrentPage('home')} 
+  className="flex items-center cursor-pointer"
+>
+  <img 
+    src="/Logo.png"     
+    alt="WaitFree Clinic"
+    className="h-10 w-auto mr-2"  // space between image and text
+  />
+
+  <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+    WaitFree<span className="text-blue-500">Clinic</span>
+  </span>
+</div>
+
+    
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
+               <button 
+      onClick={() => handleScroll("features")}
+      className="hover:text-blue-500 transition"
+    >
+      Features
+    </button>
             <button 
-              onClick={() => setCurrentPage('home')}
+              onClick={() => setCurrentPage('Pricing')}
               className={`hover:text-blue-600 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
             >
-              Home
+            Pricing
+            </button>
+             <button 
+              onClick={() => handleScroll("patient-portal")}
+              className={`hover:text-blue-600 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+            >
+          Patient Portal
             </button>
             <button 
               onClick={() => setCurrentPage('search')}
@@ -175,4 +229,5 @@ export default function Header({
       </div>
     </header>
   );
+}
 }

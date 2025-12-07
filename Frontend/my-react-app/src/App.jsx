@@ -20,7 +20,7 @@ import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import DoctorOnboarding from './pages/DoctorOnBoarding';
 import PatientOnboarding from './pages/PatientOnBoarding';
-
+import Pricing   from './pages/Pricing';
 // Import NEW components
 import AuthRequired from './pages/AuthRequired';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -278,7 +278,13 @@ function MainLayout() {
             <AdminDashboard darkMode={darkMode} appointments={appointments} />
           </ProtectedRoute>
         } />
-        
+            {/* Pricing Routes */}
+        <Route path="/Pricing" element={
+          <ProtectedRoute requiredUserType="doctor">
+            <AdminDashboard darkMode={darkMode} appointments={appointments} />
+          </ProtectedRoute>
+        } />
+
         {/* Catch all - redirect to landing */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
