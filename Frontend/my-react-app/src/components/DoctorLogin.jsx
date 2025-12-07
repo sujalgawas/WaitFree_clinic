@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import axios from "axios";
-import firebaseConfig from '../assets/firebaseConfig.json'; 
+import { AuthContext } from '../contexts/auth';
+import firebaseConfig from '../assets/firebaseConfig.json';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-export default function DoctorLogin() {
+export default function DoctorLogin({ darkMode }) {
+  const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   const [view, setView] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -20,13 +26,12 @@ export default function DoctorLogin() {
   
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [userData, setUserData] = useState(null);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   
   const [validationErrors, setValidationErrors] = useState({});
   const [touched, setTouched] = useState({});
   
-  const BACKEND_URL = 'http://192.168.0.5:5000';
+  const BACKEND_URL = 'http://127.0.0.1:5000';
 
   useEffect(() => {
     const errors = {};
@@ -82,22 +87,28 @@ export default function DoctorLogin() {
     setError(null);
     
     try {
+      // 1. Firebase Authentication
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      const token = await user.getIdToken(true);
+      const firebaseToken = await user.getIdToken(true);
       
-      const response = await axios.post(`${BACKEND_URL}/login-doctor`, { token });
+      // 2. Backend Login
+      const response = await axios.post(`${BACKEND_URL}/login-doctor`, { token: firebaseToken });
       
-      // Save to LocalStorage
+      // 3. Store in localStorage
       localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", response.data.user);
-      localStorage.setItem("userName", response.data.userName);
+      localStorage.setItem("user", "doctor");
+      localStorage.setItem("userName", response.data.userName || user.email);
       
-      setUserData(response.data.user_data);
+      // 4. Navigate to doctor home
+      navigate('/doctor-home');
+      window.location.reload();
       
     } catch (error) {
       console.error("Doctor Login Error:", error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || getFirebaseErrorMessage(error.code);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          getFirebaseErrorMessage(error.code);
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -127,27 +138,30 @@ export default function DoctorLogin() {
     setError(null);
     
     try {
-      // 1. Create User in Backend
+      // 1. Create user in Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      const firebaseToken = await user.getIdToken(true);
+      
+      // 2. Create user in Backend
       await axios.post(`${BACKEND_URL}/signup-doctor`, {
         email,
         password,
-        phone_number: phoneNumber
+        phone_number: phoneNumber,
+        firebase_uid: user.uid
       });
       
-      // 2. Sign in immediately
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      const token = await user.getIdToken(true);
+      // 3. Login to get backend token
+      const response = await axios.post(`${BACKEND_URL}/login-doctor`, { token: firebaseToken });
       
-      // 3. Login to get details
-      const response = await axios.post(`${BACKEND_URL}/login-doctor`, { token });
-      
-      // Save to LocalStorage
+      // 4. Store in localStorage
       localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", response.data.user);
-      localStorage.setItem("userName", response.data.userName);
+      localStorage.setItem("user", "doctor");
+      localStorage.setItem("userName", response.data.userName || user.email);
 
-      setUserData(response.data.user_data);
+      // 5. Navigate to doctor home
+      navigate('/doctor-home');
+      window.location.reload();
       
     } catch (error) {
       console.error("Doctor Signup Error:", error);
@@ -185,25 +199,6 @@ export default function DoctorLogin() {
     }
   };
 
-  const handleLogout = () => {
-    signOut(auth).then(() => {
-      // Clear State
-      setUserData(null);
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
-      setPhoneNumber('');
-      setError(null);
-      setTouched({});
-      setValidationErrors({});
-      setView('login');
-      // Clear Storage
-      localStorage.clear();
-    }).catch((error) => {
-      setError(getFirebaseErrorMessage(error.code));
-    });
-  };
-
   const handleViewChange = (newView) => {
     setView(newView);
     setError(null);
@@ -213,74 +208,79 @@ export default function DoctorLogin() {
     setShowConfirmPassword(false);
   };
 
-  if (userData) {
+  if (showResetModal) {
     return (
-      <div className="min-h-screen font-inter bg-gradient-to-br from-green-50 to-teal-100 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl text-center w-full max-w-md">
-          <div className="mb-6">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+      <div className={`min-h-screen flex items-center justify-center p-4 pt-20 ${
+        darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 to-teal-100'
+      }`}>
+        <div className={`p-8 rounded-2xl shadow-xl w-full max-w-md ${
+          darkMode ? 'bg-gray-800' : 'bg-white'
+        }`}>
+          <h2 className={`text-2xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+            Reset Password
+          </h2>
+          <p className={`text-sm mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Enter your email address and we'll send you a link to reset your password.
+          </p>
+          {resetEmailSent ? (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              Password reset email sent! Check your inbox.
             </div>
-            <h2 className="text-3xl font-bold mb-2 text-gray-800">Doctor Dashboard</h2>
-            <p className="text-gray-600">You're logged in as a Doctor</p>
-          </div>
-          
-          <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left">
-            <p className="text-sm text-gray-500 mb-1">Email</p>
-            <p className="text-lg font-semibold text-teal-600 break-all">{userData.email}</p>
-            {userData.phone_number && (
-              <>
-                <p className="text-sm text-gray-500 mt-3 mb-1">Phone</p>
-                <p className="text-gray-700">{userData.phone_number}</p>
-              </>
-            )}
-             <p className="text-sm text-gray-500 mt-3 mb-1">Role</p>
-             <p className="text-gray-700 font-bold uppercase">{userData.user || 'Doctor'}</p>
-
-             {/* Displaying stored name */}
-             <p className="text-sm text-gray-500 mt-3 mb-1">Username</p>
-             <p className="text-gray-700">{localStorage.getItem("userName") || userData.userName}</p>
-          </div>
-          
-          <button onClick={handleLogout} className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition duration-300 font-medium shadow-md">
-            Logout
-          </button>
+          ) : (
+            <form onSubmit={handleResetPassword}>
+              <input 
+                type="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                className={`w-full px-4 py-3 border rounded-lg mb-4 ${
+                  darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                }`}
+                placeholder="Email" 
+                required 
+              />
+              {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full bg-teal-600 text-white py-3 rounded-lg hover:bg-teal-700 disabled:opacity-50"
+              >
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setShowResetModal(false)} 
+                className="w-full mt-4 text-teal-600 text-sm hover:underline"
+              >
+                Cancel
+              </button>
+            </form>
+          )}
         </div>
       </div>
     );
   }
 
-  if (showResetModal) {
-    return (
-        <div className="min-h-screen font-inter bg-gradient-to-br from-green-50 to-teal-100 flex items-center justify-center p-4">
-            <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Reset Password</h2>
-                <p className="text-gray-600 text-sm mb-6">Enter your email address and we'll send you a link to reset your password.</p>
-                 <form onSubmit={handleResetPassword}>
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 border rounded-lg mb-4" placeholder="Email" required />
-                    <button type="submit" className="w-full bg-teal-600 text-white py-3 rounded-lg">Send Reset Link</button>
-                    <button type="button" onClick={() => setShowResetModal(false)} className="w-full mt-4 text-teal-600 text-sm">Cancel</button>
-                 </form>
-            </div>
-        </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen font-inter bg-gradient-to-br from-green-50 to-teal-100 flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+    <div className={`min-h-screen flex items-center justify-center p-4 pt-20 ${
+      darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 to-teal-100'
+    }`}>
+      <div className={`p-8 rounded-2xl shadow-xl w-full max-w-md ${
+        darkMode ? 'bg-gray-800' : 'bg-white'
+      }`}>
         
         <div className="text-center mb-6">
-            <h1 className="text-teal-700 font-bold text-xl uppercase tracking-wider">Doctor Portal</h1>
+          <h1 className="text-teal-600 font-bold text-xl uppercase tracking-wider">
+            Doctor Portal
+          </h1>
         </div>
 
-        <div className="flex mb-8 bg-gray-100 rounded-lg p-1">
+        <div className={`flex mb-8 rounded-lg p-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
           <button
             type="button"
             className={`flex-1 py-2.5 text-center font-semibold rounded-md transition-all ${
-              view === 'login' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+              view === 'login' 
+                ? darkMode ? 'bg-gray-600 text-teal-400 shadow-sm' : 'bg-white text-teal-600 shadow-sm'
+                : darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-800'
             }`}
             onClick={() => handleViewChange('login')}
           >
@@ -289,7 +289,9 @@ export default function DoctorLogin() {
           <button
             type="button"
             className={`flex-1 py-2.5 text-center font-semibold rounded-md transition-all ${
-              view === 'signup' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+              view === 'signup' 
+                ? darkMode ? 'bg-gray-600 text-teal-400 shadow-sm' : 'bg-white text-teal-600 shadow-sm'
+                : darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-800'
             }`}
             onClick={() => handleViewChange('signup')}
           >
@@ -297,88 +299,152 @@ export default function DoctorLogin() {
           </button>
         </div>
 
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        <h2 className={`text-2xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
           {view === 'login' ? 'Welcome Doctor' : 'Create Doctor Account'}
         </h2>
         
         <form onSubmit={view === 'login' ? handleLogin : handleSignup} noValidate>
           {/* Email */}
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="email">Email Address</label>
+            <label className={`block text-sm font-semibold mb-2 ${
+              darkMode ? 'text-gray-300' : 'text-gray-700'
+            }`} htmlFor="email">
+              Email Address
+            </label>
             <input
-              type="email" id="email" value={email}
+              type="email" 
+              id="email" 
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
               onBlur={() => setTouched({ ...touched, email: true })}
-              className={`w-full px-4 py-3 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 transition ${
-                validationErrors.email && touched.email ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-teal-200'
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                validationErrors.email && touched.email 
+                  ? 'border-red-500 focus:ring-red-200' 
+                  : darkMode
+                  ? 'bg-gray-700 border-gray-600 text-white focus:ring-teal-500'
+                  : 'border-gray-300 focus:ring-teal-200'
               }`}
-              placeholder="doctor@hospital.com" required
+              placeholder="doctor@hospital.com" 
+              required
             />
-            {validationErrors.email && touched.email && <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>}
+            {validationErrors.email && touched.email && (
+              <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>
+            )}
           </div>
           
           {/* Password */}
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="password">Password</label>
+            <label className={`block text-sm font-semibold mb-2 ${
+              darkMode ? 'text-gray-300' : 'text-gray-700'
+            }`} htmlFor="password">
+              Password
+            </label>
             <div className="relative">
               <input
-                type={showPassword ? 'text' : 'password'} id="password" value={password}
+                type={showPassword ? 'text' : 'password'} 
+                id="password" 
+                value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onBlur={() => setTouched({ ...touched, password: true })}
-                className={`w-full px-4 py-3 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 transition pr-12 ${
-                  validationErrors.password && touched.password ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-teal-200'
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition pr-12 ${
+                  validationErrors.password && touched.password 
+                    ? 'border-red-500 focus:ring-red-200' 
+                    : darkMode
+                    ? 'bg-gray-700 border-gray-600 text-white focus:ring-teal-500'
+                    : 'border-gray-300 focus:ring-teal-200'
                 }`}
-                placeholder="••••••••" required
+                placeholder="••••••••" 
+                required
               />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)} 
+                className={`absolute right-3 top-1/2 -translate-y-1/2 text-sm ${
+                  darkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}
+              >
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
-            {validationErrors.password && touched.password && <p className="text-red-500 text-xs mt-1">{validationErrors.password}</p>}
+            {validationErrors.password && touched.password && (
+              <p className="text-red-500 text-xs mt-1">{validationErrors.password}</p>
+            )}
           </div>
 
           {/* Confirm Password (Signup only) */}
           {view === 'signup' && (
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-semibold mb-2">Confirm Password</label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  onBlur={() => setTouched({ ...touched, confirmPassword: true })}
-                  className={`w-full px-4 py-3 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 pr-12 ${
-                    validationErrors.confirmPassword && touched.confirmPassword ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-teal-200'
-                  }`}
-                  placeholder="••••••••" required
-                />
-                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                   {showConfirmPassword ? "Hide" : "Show"}
-                </button>
+            <>
+              <div className="mb-4">
+                <label className={`block text-sm font-semibold mb-2 ${
+                  darkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'} 
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onBlur={() => setTouched({ ...touched, confirmPassword: true })}
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 pr-12 ${
+                      validationErrors.confirmPassword && touched.confirmPassword 
+                        ? 'border-red-500 focus:ring-red-200' 
+                        : darkMode
+                        ? 'bg-gray-700 border-gray-600 text-white focus:ring-teal-500'
+                        : 'border-gray-300 focus:ring-teal-200'
+                    }`}
+                    placeholder="••••••••" 
+                    required
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 text-sm ${
+                      darkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}
+                  >
+                     {showConfirmPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+                {validationErrors.confirmPassword && touched.confirmPassword && (
+                  <p className="text-red-500 text-xs mt-1">{validationErrors.confirmPassword}</p>
+                )}
               </div>
-              {validationErrors.confirmPassword && touched.confirmPassword && <p className="text-red-500 text-xs mt-1">{validationErrors.confirmPassword}</p>}
-            </div>
-          )}
 
-          {/* Phone Number (Signup only) */}
-          {view === 'signup' && (
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-semibold mb-2">Phone Number</label>
-              <input
-                type="tel" value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                onBlur={() => setTouched({ ...touched, phoneNumber: true })}
-                className={`w-full px-4 py-3 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 ${
-                  validationErrors.phoneNumber && touched.phoneNumber ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-teal-200'
-                }`}
-                placeholder="+1 (555) 123-4567"
-              />
-              {validationErrors.phoneNumber && touched.phoneNumber && <p className="text-red-500 text-xs mt-1">{validationErrors.phoneNumber}</p>}
-            </div>
+              <div className="mb-4">
+                <label className={`block text-sm font-semibold mb-2 ${
+                  darkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Phone Number (Optional)
+                </label>
+                <input
+                  type="tel" 
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onBlur={() => setTouched({ ...touched, phoneNumber: true })}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
+                    validationErrors.phoneNumber && touched.phoneNumber 
+                      ? 'border-red-500 focus:ring-red-200' 
+                      : darkMode
+                      ? 'bg-gray-700 border-gray-600 text-white focus:ring-teal-500'
+                      : 'border-gray-300 focus:ring-teal-200'
+                  }`}
+                  placeholder="+1 (555) 123-4567"
+                />
+                {validationErrors.phoneNumber && touched.phoneNumber && (
+                  <p className="text-red-500 text-xs mt-1">{validationErrors.phoneNumber}</p>
+                )}
+              </div>
+            </>
           )}
 
           {view === 'login' && (
             <div className="mb-6 text-right">
-              <button type="button" onClick={() => setShowResetModal(true)} className="text-sm text-teal-600 hover:text-teal-700 font-medium hover:underline">
+              <button 
+                type="button" 
+                onClick={() => setShowResetModal(true)} 
+                className="text-sm text-teal-600 hover:text-teal-700 font-medium hover:underline"
+              >
                 Forgot Password?
               </button>
             </div>
@@ -391,12 +457,25 @@ export default function DoctorLogin() {
           )}
           
           <button
-            type="submit" disabled={loading}
+            type="submit" 
+            disabled={loading}
             className="w-full bg-teal-600 text-white py-3 px-4 rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-300 transition duration-300 disabled:bg-gray-400 font-medium shadow-md"
           >
             {loading ? 'Processing...' : (view === 'login' ? 'Login' : 'Create Account')}
           </button>
         </form>
+
+        <div className="mt-6 text-center">
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Are you a patient?{' '}
+            <button
+              onClick={() => navigate('/login')}
+              className="text-blue-600 hover:underline font-semibold"
+            >
+              Patient Login
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );

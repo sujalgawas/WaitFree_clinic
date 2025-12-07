@@ -13,7 +13,7 @@ export default function Dashboard({ darkMode, isLoggedIn, appointments, setCurre
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-24">
         <div className={`rounded-3xl p-8 mb-8 ${darkMode ? 'bg-gradient-to-r from-gray-800 to-gray-700' : 'bg-gradient-to-r from-blue-600 to-purple-700 text-white'}`}>
           <div className="flex items-center justify-between">
             <div>

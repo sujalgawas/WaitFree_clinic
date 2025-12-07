@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
-import axios from 'axios'; // Make sure to import axios
+import axios from 'axios';
 import { AuthProvider } from './contexts/auth'; 
 
 import Header from './components/Header';
 import LocationPopup from './components/LocationPopup';
 
 // Import Pages
-import Home from './pages/Home';
+import Home from './pages/PatientHome';
+import LandingPage from './pages/LandingPage';
 import Login from './components/Login'; 
 import Register from './pages/Register';
-import DoctorLogin from './pages/DoctorLogin';
+import DoctorLogin from './components/DoctorLogin';
 import Search from './pages/Search';
 import Profile from './pages/Profile';
 import Confirmation from './pages/Confirmation';
@@ -18,6 +19,12 @@ import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import DoctorOnboarding from './pages/DoctorOnBoarding';
 import PatientOnboarding from './pages/PatientOnBoarding';
+
+// Import NEW components
+import AuthRequired from './pages/AuthRequired';
+import ProtectedRoute from './components/ProtectedRoute';
+import DoctorHome from './pages/DoctorHome';
+
 import API_KEYS from './assets/API_keys.json';
 
 const getAddressFromCoordinates = async (lat, lng) => {
@@ -62,19 +69,40 @@ const getAddressFromCoordinates = async (lat, lng) => {
 function MainLayout() {
   const navigate = useNavigate();
 
-  // --- Global State ---
   const [showLocationPopup, setShowLocationPopup] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [userType, setUserType] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userType, setUserType] = useState(localStorage.getItem('user'));
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [bookingData, setBookingData] = useState({
     name: '', mobile: '', age: '', problem: '', slot: ''
   });
   const [appointments, setAppointments] = useState([]);
+
+  // Listen for storage changes (login/logout)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setIsLoggedIn(!!localStorage.getItem('token'));
+      setUserType(localStorage.getItem('user'));
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Redirect based on user type after login
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    
+    if (token && user === 'doctor' && window.location.pathname === '/') {
+      navigate('/doctor-home');
+    } else if (token && user === 'patient' && window.location.pathname === '/') {
+      navigate('/patient-home');
+    }
+  }, [isLoggedIn, userType, navigate]);
 
   // Shim for old components
   const setCurrentPage = (page) => {
@@ -90,47 +118,37 @@ function MainLayout() {
 
   // --- LOCATION LOGIC ---
   useEffect(() => {
-    // 1. Check LocalStorage on startup
     const savedLocation = localStorage.getItem('userLocation');
     
     if (savedLocation) {
-      // If we have it, load it into state
       const parsedLoc = JSON.parse(savedLocation);
       setUserLocation(parsedLoc);
-      // Pre-fill search if on home/search page
       if(!searchQuery) setSearchQuery(parsedLoc.city);
     } else {
-      // 2. If NOT in LocalStorage, show popup after delay (only on home page)
-      if (window.location.pathname === '/') {
-        const t = setTimeout(() => setShowLocationPopup(true), 1000);
+      // Only show popup on landing page for non-authenticated users
+      if (window.location.pathname === '/' && !localStorage.getItem('token')) {
+        const t = setTimeout(() => setShowLocationPopup(true), 2000);
         return () => clearTimeout(t);
       }
     }
-  }, []); // Run once on mount
+  }, []);
 
   const handleLocationAllow = () => {
     if (navigator.geolocation) {
-      // Show loading state if you have one, or just wait
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           
-          // 1. Get readable address from Google API
           const locationData = await getAddressFromCoordinates(lat, lng);
           
           if (locationData) {
-            // Update State
             setUserLocation(locationData);
             setSearchQuery(locationData.city);
-            
-            // 2. Save to LocalStorage
             localStorage.setItem('userLocation', JSON.stringify(locationData));
             
-            // 3. Send to Backend (to save in DB)
             try {
                 const token = localStorage.getItem('token');
-                // We send it even if token is null (guest mode backend handling)
                 await axios.post('http://127.0.0.1:5000/update-location', { 
                     ...locationData, 
                     token: token 
@@ -140,9 +158,8 @@ function MainLayout() {
             }
 
             setShowLocationPopup(false);
-            //navigate('/search'); 
           } else {
-            alert("Detected coordinates, but Google couldn't find the City address.");
+            alert("Detected coordinates, but couldn't find the address.");
             setShowLocationPopup(false);
           }
         },
@@ -190,6 +207,7 @@ function MainLayout() {
         setCurrentPage={setCurrentPage} 
         showMobileMenu={showMobileMenu}
         setShowMobileMenu={setShowMobileMenu}
+        userType={userType}
       />
       
       {showLocationPopup && (
@@ -201,112 +219,65 @@ function MainLayout() {
       )}
 
       <Routes>
-        <Route path="/" element={
-          <Home 
-            darkMode={darkMode}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            setCurrentPage={setCurrentPage}
-            setSelectedDoctor={setSelectedDoctor}
-            setBookingData={setBookingData}
-          />
+        {/* Public Landing Page - No Auth Required */}
+        <Route path="/" element={<LandingPage darkMode={darkMode} />} />
+        
+        {/* Authentication Routes */}
+        <Route path="/login" element={<Login darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
+        <Route path="/register" element={<Register darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
+        <Route path="/doctor-login" element={<DoctorLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
+        <Route path="/auth-required" element={<AuthRequired darkMode={darkMode} />} />
+        
+        {/* Public Search - Anyone can search */}
+        <Route path="/search" element={<Search darkMode={darkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} setCurrentPage={setCurrentPage} setSelectedDoctor={setSelectedDoctor} setBookingData={setBookingData} />} />
+        
+        {/* Protected Patient Routes */}
+        <Route path="/patient-home" element={
+          <ProtectedRoute requiredUserType="patient">
+            <Home darkMode={darkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} setCurrentPage={setCurrentPage} setSelectedDoctor={setSelectedDoctor} setBookingData={setBookingData} />
+          </ProtectedRoute>
+        } />
+        <Route path="/patient-form" element={
+          <ProtectedRoute requiredUserType="patient">
+            <PatientOnboarding darkMode={darkMode} />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile darkMode={darkMode} selectedDoctor={selectedDoctor} bookingData={bookingData} setBookingData={setBookingData} handleBookAppointment={handleBookAppointment} />
+          </ProtectedRoute>
+        } />
+        <Route path="/confirmation" element={
+          <ProtectedRoute>
+            <Confirmation darkMode={darkMode} appointments={appointments} setCurrentPage={setCurrentPage} />
+          </ProtectedRoute>
+        } />
+        <Route path="/dashboard" element={
+          <ProtectedRoute requiredUserType="patient">
+            <Dashboard darkMode={darkMode} isLoggedIn={isLoggedIn} appointments={appointments} setCurrentPage={setCurrentPage} />
+          </ProtectedRoute>
         } />
         
-        <Route path="/patient-form" element={
-          <PatientOnboarding 
-            darkMode={darkMode}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            setCurrentPage={setCurrentPage}
-            setSelectedDoctor={setSelectedDoctor}
-            setBookingData={setBookingData}
-          />
+        {/* Protected Doctor Routes */}
+        <Route path="/doctor-home" element={
+          <ProtectedRoute requiredUserType="doctor">
+            <DoctorHome darkMode={darkMode} />
+          </ProtectedRoute>
         } />
-
         <Route path="/doctor-form" element={
-          <DoctorOnboarding 
-            darkMode={darkMode}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            setCurrentPage={setCurrentPage}
-            setSelectedDoctor={setSelectedDoctor}
-            setBookingData={setBookingData}
-          />
+          <ProtectedRoute requiredUserType="doctor">
+            <DoctorOnboarding darkMode={darkMode} />
+          </ProtectedRoute>
         } />
-
-        <Route path="/login" element={
-          <Login 
-            darkMode={darkMode}
-            setIsLoggedIn={setIsLoggedIn}
-            setUserType={setUserType}
-            setCurrentPage={setCurrentPage}
-          />
-        } />
-
-        <Route path="/register" element={
-          <Register 
-            darkMode={darkMode}
-            setIsLoggedIn={setIsLoggedIn}
-            setUserType={setUserType}
-            setCurrentPage={setCurrentPage}
-          />
-        } />
-
-        <Route path="/doctor-login" element={
-          <DoctorLogin 
-            darkMode={darkMode}
-            setIsLoggedIn={setIsLoggedIn}
-            setUserType={setUserType}
-            setCurrentPage={setCurrentPage}
-          />
-        } />
-
-        <Route path="/search" element={
-          <Search 
-            darkMode={darkMode}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            setCurrentPage={setCurrentPage}
-            setSelectedDoctor={setSelectedDoctor}
-            setBookingData={setBookingData}
-          />
-        } />
-
-        <Route path="/profile" element={
-          <Profile 
-            darkMode={darkMode}
-            selectedDoctor={selectedDoctor}
-            setCurrentPage={setCurrentPage}
-            bookingData={bookingData}
-            setBookingData={setBookingData}
-            handleBookAppointment={handleBookAppointment}
-          />
-        } />
-
-        <Route path="/confirmation" element={
-          <Confirmation 
-            darkMode={darkMode}
-            appointments={appointments}
-            setCurrentPage={setCurrentPage}
-          />
-        } />
-
-        <Route path="/dashboard" element={
-          <Dashboard 
-            darkMode={darkMode}
-            isLoggedIn={isLoggedIn}
-            appointments={appointments}
-            setCurrentPage={setCurrentPage}
-          />
-        } />
-
+        
+        {/* Admin Routes */}
         <Route path="/admin-dashboard" element={
-          <AdminDashboard 
-            darkMode={darkMode}
-            appointments={appointments}
-          />
+          <ProtectedRoute requiredUserType="admin">
+            <AdminDashboard darkMode={darkMode} appointments={appointments} />
+          </ProtectedRoute>
         } />
-
+        
+        {/* Catch all - redirect to landing */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
@@ -315,10 +286,10 @@ function MainLayout() {
 
 export default function App() {
   return (
-    //<AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <MainLayout />
-      </Router>
-    //</AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }
