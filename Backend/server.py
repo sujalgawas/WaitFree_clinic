@@ -98,6 +98,76 @@ def patient_form():
         print(f"Database Error: {e}")
         return jsonify({"error": "Failed to save profile"}), 500
 
+@app.route('/latest-location', methods=['POST'])
+def latest_location():
+    data = request.get_json()
+    token = data.get('token')
+    
+    uid = token_to_uid(token)
+    if not uid:
+        return jsonify({"message": "UnAuthorized"}), 401
+    
+    try:
+        user_doc = db.collection("users").document(uid).get()
+        if user_doc.exists:
+            location = user_doc.to_dict().get("last_known_location")
+            return jsonify({
+                "message": "location found",
+                "location": location
+            }), 200
+        return jsonify({"message": "User not found"}), 404
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"message": "no latest location found"}), 500
+
+@app.route('/search', methods=['POST'])
+def search():
+    data = request.get_json()
+    
+    location_filter = data.get('location') 
+    search_query = data.get('query', '').lower()
+    
+    city = location_filter.get("city").lower() if location_filter else None
+    
+    try:
+        doctors_ref = db.collection('doctors')
+        query_ref = doctors_ref
+        
+        if city:
+            query_ref = query_ref.where('city', '==', city)
+            
+        results = query_ref.stream()
+        
+        doctors_list = []
+        for doc in results:
+            d = doc.to_dict()
+            
+            name = d.get('full_name', '').lower()
+            specialty = d.get('specialization', '').lower()
+            
+            if search_query in name or search_query in specialty:
+                doctors_list.append({
+                    "id": doc.id,
+                    "name": d.get('full_name'),
+                    "specialty": d.get('specialization'),
+                    "experience": d.get('personal_details', {}).get('experience_years', 0),
+                    "clinic": d.get('clinic_details', {}).get('name'),
+                    "fees": d.get('consultation_fee'),
+                    "distance": "2.5", # Placeholder or calculate if you have lat/lng
+                    "rating": 4.8, # Placeholder or fetch from 'reviews' collection
+                    "verified": d.get('is_verified', False),
+                    "photo": "👨‍⚕️", # Placeholder emoji or image URL
+                    "online": True, # Logic for online status
+                    "nextSlot": "10:00 AM", # Logic for next slot
+                    "slots": ["10:00 AM", "10:30 AM"]
+                })
+                
+        return jsonify({"results": doctors_list}), 200
+
+    except Exception as e:
+        print(f"Search Error: {e}")
+        return jsonify({"error": "Search failed"}), 500
+    
 @app.route('/doctor-form', methods=['POST'])
 def doctor_form():
     token = request.form.get('token')
@@ -203,10 +273,6 @@ def verify_token():
             "message": "Token is expired or invalid", 
             "verified": False
         }), 401
-        
-@app.route('/search', methods=['POST'])
-def search():
-    pass
 
 @app.route('/update-location', methods=['POST'])
 def update_location():
