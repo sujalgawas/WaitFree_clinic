@@ -146,6 +146,68 @@ def get_doctor_profile():
             
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/booking', methods=['POST'])
+def booking():
+    data = request.get_json()
+    
+    # 1. Verify Patient (User)
+    token = data.get('token')
+    patient_uid = token_to_uid(token)
+    if not patient_uid:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    # 2. Get Data
+    doctor_name = data.get('doctorName') # Matches frontend 'doctorName'
+    timing = data.get('slot')            # Matches frontend 'slot'
+    date = data.get('date')              # Matches frontend 'date'
+    
+    try:
+        # 3. Find Doctor UID from Name
+        # In a real app, you should send doctor_uid from frontend directly.
+        # But since we are using name, we search for it.
+        doctors_ref = db.collection('doctors')
+        query = doctors_ref.where('full_name', '==', doctor_name).limit(1)
+        results = query.stream()
+        
+        doctor_uid = None
+        doctor_data = {}
+        
+        for doc in results:
+            doctor_uid = doc.id
+            doctor_data = doc.to_dict()
+            break
+            
+        if not doctor_uid:
+            return jsonify({"message": "Doctor not found"}), 404
+
+        # 4. Create Appointment Object
+        appointment_data = {
+            "patient_uid": patient_uid,
+            "doctor_uid": doctor_uid,
+            "doctor_name": doctor_name,
+            "clinic_name": doctor_data.get('clinic_details', {}).get('name'),
+            "clinic_address": doctor_data.get('clinic_details', {}).get('address'),
+            "slot": timing,
+            "date": date,
+            "status": "confirmed",
+            "created_at": firestore.SERVER_TIMESTAMP
+        }
+        
+        # 5. Save to a dedicated 'appointments' collection
+        # This is better than saving inside user docs because it's easier to query
+        # "Find all appointments for doctor X" or "for patient Y"
+        new_appt_ref = db.collection('appointments').document()
+        new_appt_ref.set(appointment_data)
+        
+        return jsonify({
+            "message": "Booking successful",
+            "appointment_id": new_appt_ref.id
+        }), 200
+
+    except Exception as e:
+        print(f"Booking Error: {e}")
+        return jsonify({"message": "Booking failed", "error": str(e)}), 500
 
 @app.route('/search', methods=['POST'])
 def search():

@@ -15,34 +15,62 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate(); // Now this will work because AuthProvider is inside Router
+  const navigate = useNavigate(); 
 
-  // Check if user is already logged in on mount
+  // --- CHECK AUTH ON MOUNT ---
   useEffect(() => {
-    const checkAuth = () => {
+    const verifyToken = async () => {
       const storedToken = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
+      const storedUser = localStorage.getItem('user'); // 'doctor' or 'patient'
       const storedUserName = localStorage.getItem('userName');
 
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser({
-          type: storedUser,
-          name: storedUserName,
-          username: storedUserName
-        });
+      // If no token exists in storage, stop loading and return (Guest mode)
+      if (!storedToken || !storedUser) {
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      try {
+        // 1. Call Backend to Verify Token
+        const response = await axios.post('http://127.0.0.1:5000/verify-token', { 
+          token: storedToken 
+        });
+
+        // 2. If Verified (Backend returns 200 and verified=true)
+        if (response.data.verified) {
+          setToken(storedToken);
+          setUser({
+            type: storedUser,
+            name: storedUserName,
+            username: storedUserName
+          });
+        } else {
+          // Token technically valid format but backend said NO
+          throw new Error("Token verification returned false");
+        }
+
+      } catch (error) {
+        console.error("Token Expired or Invalid:", error);
+        
+        // 3. If Failed (401 or Network Error), Logout immediately
+        localStorage.clear(); // Clear all storage
+        setToken(null);
+        setUser(null);
+        navigate('/'); // Send to landing page
+      } finally {
+        setLoading(false);
+      }
     };
 
-    checkAuth();
-  }, []);
+    verifyToken();
+  }, [navigate]);
 
   const login = async (credentials, userType = 'patient') => {
     try {
+      // Determine endpoint based on type
       const endpoint = userType === 'doctor' 
-        ? 'http://127.0.0.1:5000/doctor/login' 
-        : 'http://127.0.0.1:5000/patient/login';
+        ? 'http://127.0.0.1:5000/login-doctor'  // Make sure these match your server.py routes exactly
+        : 'http://127.0.0.1:5000/login-patient';
       
       const response = await axios.post(endpoint, credentials);
       
@@ -51,14 +79,14 @@ export const AuthProvider = ({ children }) => {
       // Store in localStorage
       localStorage.setItem('token', newToken);
       localStorage.setItem('user', userType);
-      localStorage.setItem('userName', userName || userData.name || userData.username);
+      localStorage.setItem('userName', userName || userData?.name || 'User');
       
       // Update state
       setToken(newToken);
       setUser({
         ...userData,
         type: userType,
-        name: userName || userData.name || userData.username
+        name: userName || userData?.name
       });
 
       // Redirect based on user type
@@ -80,10 +108,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     // Clear localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userLocation');
+    localStorage.clear(); // Easier to just clear everything
     
     // Clear state
     setToken(null);
