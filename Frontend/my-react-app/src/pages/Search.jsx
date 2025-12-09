@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom'; // Import useSearchParams
 import { MessageCircle, MapPin, Star, Clock, Loader2 } from 'lucide-react';
 
-export default function Search({ darkMode, searchQuery, setSearchQuery, setCurrentPage, setSelectedDoctor, setBookingData }) {
+export default function Search({ darkMode, setCurrentPage, setSelectedDoctor, setBookingData }) {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams(); // Hook to manage URL params
+  
+  // Get query from URL (e.g., ?q=dentist)
+  const searchQuery = searchParams.get('q') || '';
 
   // --- FETCH DOCTORS FROM BACKEND ---
   useEffect(() => {
@@ -16,20 +21,19 @@ export default function Search({ darkMode, searchQuery, setSearchQuery, setCurre
       setError(null);
 
       try {
-        // 1. Get User Location from Storage (to filter by city)
         const savedLocation = localStorage.getItem('userLocation');
         let city = '';
         if (savedLocation) {
           city = JSON.parse(savedLocation).city;
         }
 
-        // 2. Call the Flask API
+        console.log(`Fetching for: ${searchQuery} in ${city}`);
+
         const response = await axios.post('http://127.0.0.1:5000/search', {
           query: searchQuery,
           location: { city: city }
         });
 
-        // 3. Update State
         if (response.data.results) {
           setDoctors(response.data.results);
         } else {
@@ -38,18 +42,28 @@ export default function Search({ darkMode, searchQuery, setSearchQuery, setCurre
 
       } catch (err) {
         console.error("Search Error:", err);
-        setError("Failed to connect to server. Please try again.");
+        setError("Failed to connect to server.");
       } finally {
         setLoading(false);
       }
     };
 
+    // If query exists in URL, fetch immediately (solves refresh issue)
+    // We still debounce typing inside the input
     const debounceTimer = setTimeout(() => {
-      fetchDoctors();
+        fetchDoctors();
     }, 500);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchQuery]);
+    
+  }, [searchQuery]); // Re-run whenever URL param 'q' changes
+
+  // Update URL when input changes
+  const handleInputChange = (e) => {
+      const val = e.target.value;
+      // This updates the URL to /search?q=val without reloading
+      setSearchParams(val ? { q: val } : {});
+  };
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-br from-blue-50 to-purple-50 text-gray-900'}`}>
@@ -59,9 +73,10 @@ export default function Search({ darkMode, searchQuery, setSearchQuery, setCurre
         <div className="mb-6 flex items-center gap-3">
           <input
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleInputChange} // Update URL directly
             placeholder="Search doctors, specialties, clinics..."
             className={`flex-1 px-4 py-3 rounded-xl border outline-none focus:ring-2 focus:ring-blue-500 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
+            autoFocus
           />
           <button
             onClick={() => setCurrentPage('home')}
@@ -90,7 +105,7 @@ export default function Search({ darkMode, searchQuery, setSearchQuery, setCurre
         {!loading && !error && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {doctors.map(doc => (
-              <div key={doc.id} className={`p-6 rounded-2xl border transition-all hover:shadow-lg ${darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white/50 border-white'}`}>
+              <div key={doc.id || doc.uid} className={`p-6 rounded-2xl border transition-all hover:shadow-lg ${darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white/50 border-white'}`}>
 
                 <div className="flex items-start gap-4 mb-4">
                   {/* Doctor Image / Avatar */}
@@ -100,8 +115,8 @@ export default function Search({ darkMode, searchQuery, setSearchQuery, setCurre
                   </div>
 
                   <div className="flex-1">
-                    <h4 className="font-bold text-lg">{doc.name}</h4>
-                    <p className="text-sm font-medium text-blue-600">{doc.specialty}</p>
+                    <h4 className="font-bold text-lg">{doc.name || doc.full_name}</h4>
+                    <p className="text-sm font-medium text-blue-600">{doc.specialty || doc.specialization}</p>
 
                     <div className="flex items-center gap-2 mt-1 text-sm opacity-70">
                       <span>{doc.experience || 0} yrs exp</span>
@@ -117,13 +132,13 @@ export default function Search({ darkMode, searchQuery, setSearchQuery, setCurre
                 {/* Details */}
                 <div className="space-y-2 text-sm mb-4 opacity-80">
                   <p className="flex items-center gap-2">
-                    <MapPin size={16} /> {doc.clinic || "Clinic Name"}
+                    <MapPin size={16} /> {doc.clinic || doc.clinic_details?.name || "Clinic"}
                   </p>
                   <p className="flex items-center gap-2">
                     <Clock size={16} /> Next Slot: <span className="font-semibold">{doc.nextSlot || "Available Today"}</span>
                   </p>
                   <p className="font-bold text-green-600 text-base">
-                    ₹{doc.fees || "500"} <span className="text-xs font-normal text-gray-500 dark:text-gray-400">Consultation Fee</span>
+                    ₹{doc.fees || doc.consultation_fee} <span className="text-xs font-normal text-gray-500 dark:text-gray-400">Consultation Fee</span>
                   </p>
                 </div>
 
@@ -131,17 +146,14 @@ export default function Search({ darkMode, searchQuery, setSearchQuery, setCurre
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
-                      // Navigate using Doctor's Name directly
                       setSelectedDoctor(doc);
-                      navigate(`/doctor/${doc.name}`);
+                      navigate(`/doctor/${doc.name || doc.full_name}`);
                     }}
                     className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded-xl font-semibold hover:opacity-90 transition"
                   >
                     Book
                   </button>
-                  <button
-                    className={`p-2 border rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}
-                  >
+                  <button className={`p-2 border rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                     <MessageCircle size={20} />
                   </button>
                 </div>
@@ -150,7 +162,7 @@ export default function Search({ darkMode, searchQuery, setSearchQuery, setCurre
 
             {doctors.length === 0 && (
               <div className="col-span-full text-center py-20 opacity-70">
-                <p className="text-xl font-semibold">No doctors found.</p>
+                <p className="text-xl font-semibold">No doctors found for "{searchQuery}".</p>
                 <p>Try changing your location or search for a different specialty.</p>
               </div>
             )}
