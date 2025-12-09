@@ -120,6 +120,33 @@ def latest_location():
         print(f"Error: {e}")
         return jsonify({"message": "no latest location found"}), 500
 
+@app.route('/get-doctor-profile', methods=['POST'])
+def get_doctor_profile():
+    data = request.get_json()
+    doctor_name = data.get('doctor_name')
+    
+    if not doctor_name:
+        return jsonify({"message": "Doctor name required"}), 400
+        
+    try:
+        # Query by name (make sure you have an index if this gets slow)
+        query = db.collection('doctors').where('full_name', '==', doctor_name).limit(1)
+        results = query.stream()
+        
+        doctor_data = None
+        for doc in results:
+            doctor_data = doc.to_dict()
+            doctor_data['uid'] = doc.id
+            break
+            
+        if doctor_data:
+            return jsonify({"message": "Found", "doctor": doctor_data}), 200
+        else:
+            return jsonify({"message": "Not found"}), 404
+            
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/search', methods=['POST'])
 def search():
     data = request.get_json()
@@ -159,7 +186,7 @@ def search():
                     "photo": "👨‍⚕️", # Placeholder emoji or image URL
                     "online": True, # Logic for online status
                     "nextSlot": "10:00 AM", # Logic for next slot
-                    "slots": ["10:00 AM", "10:30 AM"]
+                    "slots": [d.get("availability",{}).get("morning_shift",{}).get("start", "10:00"), d.get("availability",{}).get("evening_shift",{}).get("start", "17:00")]
                 })
                 
         return jsonify({"results": doctors_list}), 200

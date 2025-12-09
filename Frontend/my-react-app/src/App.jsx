@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import axios from 'axios';
-import { AuthProvider } from './contexts/auth'; 
+import { AuthProvider } from './contexts/auth';
 
 import Header from './components/Header';
 import LocationPopup from './components/LocationPopup';
@@ -9,7 +9,7 @@ import LocationPopup from './components/LocationPopup';
 // Import Pages
 import Home from './pages/PatientHome';
 import LandingPage from './pages/LandingPage';
-import Login from './components/Login'; 
+import Login from './components/Login';
 import Register from './pages/Register';
 import DoctorLogin from './components/DoctorLogin';
 import PatientLogin from './components/PatientLogin';
@@ -20,36 +20,37 @@ import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import DoctorOnboarding from './pages/DoctorOnBoarding';
 import PatientOnboarding from './pages/PatientOnBoarding';
-import Pricing   from './pages/Pricing';
+import Pricing from './pages/Pricing';
 // Import NEW components
 import AuthRequired from './pages/AuthRequired';
 import ProtectedRoute from './components/ProtectedRoute';
 import DoctorHome from './pages/DoctorHome';
+import DoctorProfile from './pages/DoctorProfile';
 
 import API_KEYS from './assets/API_keys.json';
 
 const getAddressFromCoordinates = async (lat, lng) => {
-  const GOOGLE_API_KEY = API_KEYS.GOOGLE_API_KEY; 
-  
+  const GOOGLE_API_KEY = API_KEYS.GOOGLE_API_KEY;
+
   try {
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`
     );
     const data = await response.json();
-    
+
     if (data.results && data.results.length > 0) {
       const addressComponents = data.results[0].address_components;
       let city = '';
       let zip = '';
-      
+
       addressComponents.forEach(comp => {
         if (comp.types.includes('locality')) city = comp.long_name;
         if (comp.types.includes('postal_code')) zip = comp.long_name;
       });
 
       if (!city) {
-         const adminArea = addressComponents.find(c => c.types.includes('administrative_area_level_2'));
-         if(adminArea) city = adminArea.long_name;
+        const adminArea = addressComponents.find(c => c.types.includes('administrative_area_level_2'));
+        if (adminArea) city = adminArea.long_name;
       }
 
       return {
@@ -97,7 +98,7 @@ function MainLayout() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
-    
+
     if (token && user === 'doctor' && window.location.pathname === '/') {
       navigate('/doctor-home');
     } else if (token && user === 'patient' && window.location.pathname === '/') {
@@ -120,11 +121,11 @@ function MainLayout() {
   // --- LOCATION LOGIC ---
   useEffect(() => {
     const savedLocation = localStorage.getItem('userLocation');
-    
+
     if (savedLocation) {
       const parsedLoc = JSON.parse(savedLocation);
       setUserLocation(parsedLoc);
-      if(!searchQuery) setSearchQuery(parsedLoc.city);
+      if (!searchQuery) setSearchQuery(parsedLoc.city);
     } else {
       // Only show popup on landing page for non-authenticated users
       if (window.location.pathname === '/' && !localStorage.getItem('token')) {
@@ -140,22 +141,22 @@ function MainLayout() {
         async (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-          
+
           const locationData = await getAddressFromCoordinates(lat, lng);
-          
+
           if (locationData) {
             setUserLocation(locationData);
             setSearchQuery(locationData.city);
             localStorage.setItem('userLocation', JSON.stringify(locationData));
-            
+
             try {
-                const token = localStorage.getItem('token');
-                await axios.post('http://127.0.0.1:5000/update-location', { 
-                    ...locationData, 
-                    token: token 
-                });
+              const token = localStorage.getItem('token');
+              await axios.post('http://127.0.0.1:5000/update-location', {
+                ...locationData,
+                token: token
+              });
             } catch (err) {
-                console.error("Failed to sync location to backend", err);
+              console.error("Failed to sync location to backend", err);
             }
 
             setShowLocationPopup(false);
@@ -192,7 +193,7 @@ function MainLayout() {
       setAppointments(prev => [newAppointment, ...prev]);
       setBookingData({ name: '', mobile: '', age: '', problem: '', slot: '' });
       setSelectedDoctor(null);
-      navigate('/confirmation'); 
+      navigate('/confirmation');
     } else {
       alert('Please fill all required fields (name, mobile, slot).');
     }
@@ -200,19 +201,19 @@ function MainLayout() {
 
   return (
     <div className={`${darkMode ? 'dark' : ''} min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200`}>
-      <Header 
-        darkMode={darkMode} 
+      <Header
+        darkMode={darkMode}
         setDarkMode={setDarkMode}
         isLoggedIn={isLoggedIn}
         setIsLoggedIn={setIsLoggedIn}
-        setCurrentPage={setCurrentPage} 
+        setCurrentPage={setCurrentPage}
         showMobileMenu={showMobileMenu}
         setShowMobileMenu={setShowMobileMenu}
         userType={userType}
       />
-      
+
       {showLocationPopup && (
-        <LocationPopup 
+        <LocationPopup
           darkMode={darkMode}
           handleLocationAllow={handleLocationAllow}
           setShowLocationPopup={setShowLocationPopup}
@@ -222,22 +223,29 @@ function MainLayout() {
       <Routes>
         {/* Public Landing Page - No Auth Required */}
         <Route path="/" element={<LandingPage darkMode={darkMode} />} />
-        
+
         {/* Authentication Routes */}
         <Route path="/login" element={<Login darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/register" element={<Register darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/patient-login" element={<PatientLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/doctor-login" element={<DoctorLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/auth-required" element={<AuthRequired darkMode={darkMode} />} />
-        
+
         {/* Public Search - Anyone can search */}
         <Route path="/search" element={<Search darkMode={darkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} setCurrentPage={setCurrentPage} setSelectedDoctor={setSelectedDoctor} setBookingData={setBookingData} />} />
-        
+
         {/* Protected Patient Routes */}
         <Route path="/patient-home" element={
           <ProtectedRoute requiredUserType="patient">
             <Home darkMode={darkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} setCurrentPage={setCurrentPage} setSelectedDoctor={setSelectedDoctor} setBookingData={setBookingData} />
           </ProtectedRoute>
+        } />
+        {/* In your Routes section */}
+        <Route path="/doctor/:name" element={
+          <DoctorProfile
+            darkMode={darkMode}
+            setBookingData={setBookingData}
+          />
         } />
         <Route path="/patient-form" element={
           <ProtectedRoute requiredUserType="patient">
@@ -259,7 +267,7 @@ function MainLayout() {
             <Dashboard darkMode={darkMode} isLoggedIn={isLoggedIn} appointments={appointments} setCurrentPage={setCurrentPage} />
           </ProtectedRoute>
         } />
-        
+
         {/* Protected Doctor Routes */}
         <Route path="/doctor-home" element={
           <ProtectedRoute requiredUserType="doctor">
@@ -271,14 +279,14 @@ function MainLayout() {
             <DoctorOnboarding darkMode={darkMode} />
           </ProtectedRoute>
         } />
-        
+
         {/* Admin Routes */}
         <Route path="/admin-dashboard" element={
           <ProtectedRoute requiredUserType="admin">
             <AdminDashboard darkMode={darkMode} appointments={appointments} />
           </ProtectedRoute>
         } />
-            {/* Pricing Routes */}
+        {/* Pricing Routes */}
         <Route path="/Pricing" element={
           <ProtectedRoute requiredUserType="doctor">
             <AdminDashboard darkMode={darkMode} appointments={appointments} />
