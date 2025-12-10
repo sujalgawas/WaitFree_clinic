@@ -192,7 +192,7 @@ const LandingPage = ({ darkMode }) => {
                 darkMode ? 'text-white' : 'text-gray-900'
               }`}>
                 Medical Practice
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 block">
+                <span className="text-transparent leading-relaxed bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 block">
                   Reimagined
                 </span>
               </h1>
