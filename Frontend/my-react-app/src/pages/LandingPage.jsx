@@ -316,7 +316,7 @@ const LandingPage = ({ darkMode }) => {
               Patient Login
             </button>
             <button
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/login')}
               className={`px-8 py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 ${
                 darkMode 
                   ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700' 

@@ -229,7 +229,7 @@ function MainLayout() {
         <Route path="/register" element={<Register darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/patient-login" element={<PatientLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/doctor-login" element={<DoctorLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
-        <Route path="/auth-required" element={<AuthRequired darkMode={darkMode} />} />
+        <Route path="/Pricing" element={<Pricing darkMode={darkMode} />} />
 
         {/* Public Search - Anyone can search */}
         <Route path="/search" element={<Search darkMode={darkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} setCurrentPage={setCurrentPage} setSelectedDoctor={setSelectedDoctor} setBookingData={setBookingData} />} />
