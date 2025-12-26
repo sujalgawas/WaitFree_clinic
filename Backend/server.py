@@ -457,7 +457,7 @@ def login_doctor():
 
         if user_type != "doctor":
             return jsonify({
-                "message": "Login in on Doctors login page",
+                "message": "Login in on Patient login page",
             }), 403
             
         return jsonify({
@@ -526,7 +526,7 @@ def login_patient():
 
         if user_type != "patient":
             return jsonify({
-                "message": "Login in on Patient login page",
+                "message": "Login in on Doctor login page",
             }), 403
             
         return jsonify({

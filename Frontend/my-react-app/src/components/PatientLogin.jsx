@@ -116,6 +116,7 @@ export default function PatientLogin({ darkMode }) {
   // --- PATIENT SIGNUP ---
   const handleSignup = async (e) => {
     e.preventDefault();
+    // 1. Trigger visual validation states
     setTouched({ email: true, password: true, confirmPassword: true, phoneNumber: true });
     
     const localErrors = {};
@@ -125,6 +126,8 @@ export default function PatientLogin({ darkMode }) {
     if (password !== confirmPassword && password && confirmPassword) {
       localErrors.confirmPassword = 'Passwords do not match';
     }
+
+    // Stop if there are local validation issues
     if (Object.keys(localErrors).length > 0) {
        setValidationErrors(prev => ({ ...prev, ...localErrors }));
        return;
@@ -135,34 +138,40 @@ export default function PatientLogin({ darkMode }) {
     setError(null);
     
     try {
-      // 1. Create user in Firebase
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      const firebaseToken = await user.getIdToken(true);
-      
-      // 2. Create user in Backend
+      // 1. Create user in Backend first (Patient Endpoint)
+      // Note: We do NOT send firebase_uid as the backend handles this
       await axios.post(`${BACKEND_URL}/signup-patient`, {
         email,
         password,
-        phone_number: phoneNumber,
-        firebase_uid: user.uid
+        phone_number: phoneNumber
       });
       
-      // 3. Login to get backend token
-      const response = await axios.post(`${BACKEND_URL}/login-patient`, { token: firebaseToken });
+      // 2. Sign in to Firebase immediately to retrieve the ID token
+      // We use signIn because the backend has already registered the user in Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      const firebaseToken = await user.getIdToken(true);
       
-      // 4. Store in localStorage
+      // 3. Verify the login via Backend to get the application-specific JWT
+      const response = await axios.post(`${BACKEND_URL}/login-patient`, { 
+        token: firebaseToken 
+      });
+      
+      // 4. Store session details in localStorage
       localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", "patient");
+      localStorage.setItem("user", "patient"); // Identify as patient
       localStorage.setItem("userName", response.data.userName || user.email);
       
-      // 5. Navigate to patient home
-      navigate('/patient-home');
+      // 5. Navigate to patient dashboard
+      navigate('/patient-form');
       window.location.reload();
       
     } catch (error) {
       console.error("Patient Signup Error:", error);
-      const errorMessage = error.response?.data?.error || getFirebaseErrorMessage(error.code);
+      // Catch specific backend error messages or fallback to Firebase error codes
+      const errorMessage = error.response?.data?.error || 
+                           error.response?.data?.message || 
+                           getFirebaseErrorMessage(error.code);
       setError(errorMessage);
     } finally {
       setLoading(false);
