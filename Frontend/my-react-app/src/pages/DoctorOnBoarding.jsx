@@ -183,7 +183,7 @@ export default function DoctorOnboarding() {
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Google Maps Link (Optional)</label>
+        <label className="block text-sm font-medium text-gray-700">Google Maps Link</label>
         <input name="google_maps_link" value={formData.google_maps_link} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-teal-500 outline-none" placeholder="http://googleusercontent.com/maps.google.com/..." />
       </div>
     </div>

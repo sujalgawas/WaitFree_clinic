@@ -26,6 +26,8 @@ import AuthRequired from './pages/AuthRequired';
 import ProtectedRoute from './components/ProtectedRoute';
 import DoctorHome from './pages/DoctorHome';
 import DoctorProfile from './pages/DoctorProfile';
+import MyAppointments from './pages/MyAppoinments';
+import DoctorSchedule from './pages/DoctorSchedule';
 
 import API_KEYS from './assets/API_keys.json';
 
@@ -118,7 +120,7 @@ function MainLayout() {
     else document.documentElement.classList.remove('dark');
   }, [darkMode]);
 
-  // --- LOCATION LOGIC ---
+  // --- UPDATED LOCATION LOGIC ---
   useEffect(() => {
     const savedLocation = localStorage.getItem('userLocation');
 
@@ -127,11 +129,9 @@ function MainLayout() {
       setUserLocation(parsedLoc);
       if (!searchQuery) setSearchQuery(parsedLoc.city);
     } else {
-      // Only show popup on landing page for non-authenticated users
-      if (window.location.pathname === '/' && !localStorage.getItem('token')) {
-        const t = setTimeout(() => setShowLocationPopup(true), 2000);
-        return () => clearTimeout(t);
-      }
+      // Trigger popup on every refresh/load if savedLocation is missing
+      const t = setTimeout(() => setShowLocationPopup(true), 1500);
+      return () => clearTimeout(t);
     }
   }, []);
 
@@ -151,10 +151,12 @@ function MainLayout() {
 
             try {
               const token = localStorage.getItem('token');
-              await axios.post('http://127.0.0.1:5000/update-location', {
-                ...locationData,
-                token: token
-              });
+              if (token) {
+                await axios.post('http://127.0.0.1:5000/update-location', {
+                  ...locationData,
+                  token: token
+                });
+              }
             } catch (err) {
               console.error("Failed to sync location to backend", err);
             }
@@ -221,7 +223,7 @@ function MainLayout() {
       )}
 
       <Routes>
-        {/* Public Landing Page - No Auth Required */}
+        {/* Public Landing Page */}
         <Route path="/" element={<LandingPage darkMode={darkMode} />} />
 
         {/* Authentication Routes */}
@@ -231,7 +233,7 @@ function MainLayout() {
         <Route path="/doctor-login" element={<DoctorLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/Pricing" element={<Pricing darkMode={darkMode} />} />
 
-        {/* Public Search - Anyone can search */}
+        {/* Public Search */}
         <Route path="/search" element={<Search darkMode={darkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} setCurrentPage={setCurrentPage} setSelectedDoctor={setSelectedDoctor} setBookingData={setBookingData} />} />
 
         {/* Protected Patient Routes */}
@@ -240,28 +242,48 @@ function MainLayout() {
             <Home darkMode={darkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} setCurrentPage={setCurrentPage} setSelectedDoctor={setSelectedDoctor} setBookingData={setBookingData} />
           </ProtectedRoute>
         } />
-        {/* In your Routes section */}
+
+        <Route
+          path="/my-appointments"
+          element={
+            <ProtectedRoute requiredUserType="patient">
+              <MyAppointments darkMode={darkMode} />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="/doctor-schedule" element={
+          <ProtectedRoute requiredUserType="doctor">
+            <DoctorSchedule darkMode={darkMode} />
+          </ProtectedRoute>
+        } />
+
+
         <Route path="/doctor/:name" element={
           <DoctorProfile
             darkMode={darkMode}
             setBookingData={setBookingData}
           />
         } />
+
         <Route path="/patient-form" element={
           <ProtectedRoute requiredUserType="patient">
             <PatientOnboarding darkMode={darkMode} />
           </ProtectedRoute>
         } />
+
         <Route path="/profile" element={
           <ProtectedRoute>
             <Profile darkMode={darkMode} selectedDoctor={selectedDoctor} bookingData={bookingData} setBookingData={setBookingData} handleBookAppointment={handleBookAppointment} />
           </ProtectedRoute>
         } />
+
         <Route path="/confirmation" element={
           <ProtectedRoute>
             <Confirmation darkMode={darkMode} appointments={appointments} setCurrentPage={setCurrentPage} />
           </ProtectedRoute>
         } />
+
         <Route path="/dashboard" element={
           <ProtectedRoute requiredUserType="patient">
             <Dashboard darkMode={darkMode} isLoggedIn={isLoggedIn} appointments={appointments} setCurrentPage={setCurrentPage} />
@@ -274,6 +296,7 @@ function MainLayout() {
             <DoctorHome darkMode={darkMode} />
           </ProtectedRoute>
         } />
+
         <Route path="/doctor-form" element={
           <ProtectedRoute requiredUserType="doctor">
             <DoctorOnboarding darkMode={darkMode} />
@@ -286,14 +309,8 @@ function MainLayout() {
             <AdminDashboard darkMode={darkMode} appointments={appointments} />
           </ProtectedRoute>
         } />
-        {/* Pricing Routes */}
-        <Route path="/Pricing" element={
-          <ProtectedRoute requiredUserType="doctor">
-            <AdminDashboard darkMode={darkMode} appointments={appointments} />
-          </ProtectedRoute>
-        } />
 
-        {/* Catch all - redirect to landing */}
+        {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

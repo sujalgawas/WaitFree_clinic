@@ -97,6 +97,71 @@ def patient_form():
     except Exception as e:
         print(f"Database Error: {e}")
         return jsonify({"error": "Failed to save profile"}), 500
+    
+@app.route('/get-doctor-schedule', methods=['POST'])
+def get_doctor_schedule():
+    data = request.get_json()
+    token = data.get('token')
+    
+    # Verify the doctor's UID using your existing token function
+    doctor_uid = token_to_uid(token)
+    if not doctor_uid:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    try:
+        appointments_ref = db.collection('appointments')
+        
+        # Query where doctor_uid matches. 
+        # Note: If this fails, check terminal for the Index link!
+        query = appointments_ref.where('doctor_uid', '==', doctor_uid).order_by('date').order_by('slot')
+        results = query.stream()
+
+        schedule = []
+        for doc in results:
+            appt = doc.to_dict()
+            appt['id'] = doc.id
+            schedule.append(appt)
+
+        return jsonify({"schedule": schedule}), 200
+    except Exception as e:
+        print(f"Schedule Error: {e}")
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/get-user-appointments', methods=['POST'])
+def get_user_appointments():
+    data = request.get_json()
+    token = data.get('token')
+    
+    # 1. Verify User
+    # Assuming your token_to_uid function is already defined
+    patient_uid = token_to_uid(token) 
+    if not patient_uid:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    try:
+        appointments_ref = db.collection('appointments')
+        
+        # 2. Query Firestore
+        # NOTE: If this fails, check your terminal for a link to create a Firestore Index
+        query = appointments_ref.where('patient_uid', '==', patient_uid).order_by('created_at', direction=firestore.Query.DESCENDING)
+        results = query.stream()
+
+        appointments = []
+        for doc in results:
+            appt = doc.to_dict()
+            appt['id'] = doc.id
+            
+            # Convert Firestore Timestamp to string for JSON compatibility
+            if 'created_at' in appt and appt['created_at']:
+                appt['created_at'] = appt['created_at'].strftime('%Y-%m-%d %H:%M')
+                
+            appointments.append(appt)
+
+        return jsonify({"appointments": appointments}), 200
+
+    except Exception as e:
+        print(f"Error fetching appointments: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/latest-location', methods=['POST'])
 def latest_location():

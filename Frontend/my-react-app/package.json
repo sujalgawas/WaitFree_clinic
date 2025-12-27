@@ -15,6 +15,7 @@
     "vite": "^7.2.2"
   },
   "dependencies": {
+    "@react-google-maps/api": "^2.20.8",
     "@vitejs/plugin-react": "^5.1.1",
     "axios": "^1.13.2",
     "firebase": "^12.6.0",
