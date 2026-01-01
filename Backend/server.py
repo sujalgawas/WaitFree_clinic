@@ -5,9 +5,20 @@ from firebase_admin import credentials, initialize_app, firestore, auth
 import json
 import re
 from urllib.parse import unquote
+from firebase_admin import storage
+from werkzeug.utils import secure_filename
+import os
+from datetime import datetime
+import json
 
 cred = credentials.Certificate("./serviceAccountKey.json")
-initialize_app(cred)
+#initialize_app(cred)
+
+firebase_admin.initialize_app(cred, {
+    'storageBucket': 'waitfreeclinic.firebasestorage.app'  # Replace with your bucket URL
+})
+
+bucket = storage.bucket()
 
 db = firestore.client()
 
@@ -28,77 +39,172 @@ def token_to_uid(token):
         print(f"Token verification failed: {e}")
         return None
 
-import json
 
 @app.route('/patient-form', methods=['POST'])
 def patient_form():
-    token = request.form.get('token')
-    
-    uid = token_to_uid(token)
-    if not uid:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    profile_file = request.files.get('profile_image')
-    
-    profile_url = "default_avatar" 
-    if profile_file:
-        print(f"File received: {profile_file.filename}")
-        profile_url = "pending_upload_url"
-
-    full_name = request.form.get('full_name')
-    date_of_birth = request.form.get('date_of_birth')
-    gender = request.form.get('gender')
-    blood_group = request.form.get('blood_group')
-    height = request.form.get('height') # in cm
-    weight = request.form.get('weight') # in kg
-
-    emergency_name = request.form.get('emergency_name')
-    emergency_phone = request.form.get('emergency_phone')
-    emergency_relation = request.form.get('emergency_relation')
-
-    allergies_str = request.form.get('allergies')
-    chronic_conditions_str = request.form.get('chronic_conditions')
-    
-    allergies = json.loads(allergies_str) if allergies_str else []
-    chronic_conditions = json.loads(chronic_conditions_str) if chronic_conditions_str else []
-
-    patient_data = {
-        "full_name": full_name,
-        "email": request.form.get('email'),
-        "profile_completed": True,
-        "profile_image": profile_url,
-
-        "personal_details": {
-            "dob": date_of_birth,
-            "gender": gender,
-            "blood_group": blood_group,
-            "height": height,
-            "weight": weight
-        },
-
-        "medical_profile": {
-            "allergies": allergies,
-            "chronic_conditions": chronic_conditions,
-        },
-
-        "emergency_contact": {
-            "name": emergency_name,
-            "phone": emergency_phone,
-            "relation": emergency_relation
-        }
-    }
-
     try:
-        db.collection('patients').document(uid).set(patient_data, merge=True)
+        # 1. TOKEN VALIDATION
+        token = request.form.get('token')
+        if not token:
+            return jsonify({"message": "Token is required"}), 400
         
-        return jsonify({
-            "message": "Patient profile saved successfully",
-            "uid": uid
-        }), 200
+        uid = token_to_uid(token)
+        if not uid:
+            return jsonify({"message": "Unauthorized - Invalid token"}), 401
+
+        # 2. REQUIRED FIELD VALIDATION
+        required_fields = ['full_name', 'date_of_birth', 'gender', 'emergency_name', 'emergency_phone', 'emergency_relation']
+        
+        missing_fields = [field for field in required_fields if not request.form.get(field)]
+        if missing_fields:
+            return jsonify({
+                "message": f"Missing required fields: {', '.join(missing_fields)}"
+            }), 400
+
+        # 3. PROFILE IMAGE UPLOAD (Optional)
+        profile_file = request.files.get('profile_image')
+        profile_url = "default_avatar"  # Default if no image uploaded
+        
+        if profile_file and profile_file.filename != '':
+            print(f"File received: {profile_file.filename}")
+            
+            # Validate file type
+            if not allowed_file(profile_file.filename):
+                return jsonify({
+                    "message": "Invalid file type. Allowed: PNG, JPG, JPEG"
+                }), 400
+            
+            # Validate file size
+            profile_file.seek(0, os.SEEK_END)
+            file_size = profile_file.tell()
+            profile_file.seek(0)
+            
+            if file_size > MAX_FILE_SIZE:
+                return jsonify({"message": "Profile image size exceeds 5MB limit"}), 400
+            
+            # Upload to Firebase Storage
+            try:
+                filename = secure_filename(profile_file.filename)
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                blob_name = f"patient_profiles/{uid}/{timestamp}_{filename}"
+                
+                bucket = storage.bucket()
+                blob = bucket.blob(blob_name)
+                blob.upload_from_file(profile_file, content_type=profile_file.content_type)
+                blob.make_public()
+                profile_url = blob.public_url
+                
+                print(f"✅ Profile image uploaded: {blob_name}")
+                
+            except Exception as upload_error:
+                print(f"❌ Firebase Storage Error: {upload_error}")
+                return jsonify({"message": "Failed to upload profile image"}), 500
+
+        # 4. EXTRACT AND VALIDATE FORM DATA
+        full_name = request.form.get('full_name', '').strip()
+        date_of_birth = request.form.get('date_of_birth', '').strip()
+        gender = request.form.get('gender', '').strip()
+        blood_group = request.form.get('blood_group', '').strip()
+        height = request.form.get('height', '').strip()
+        weight = request.form.get('weight', '').strip()
+        
+        # Emergency contact
+        emergency_name = request.form.get('emergency_name', '').strip()
+        emergency_phone = request.form.get('emergency_phone', '').strip()
+        emergency_relation = request.form.get('emergency_relation', '').strip()
+
+        # CRITICAL FIX: Handle allergies and chronic conditions
+        # Frontend sends as comma-separated strings, NOT JSON
+        allergies_input = request.form.get('allergies_input', '').strip()
+        chronic_conditions_input = request.form.get('chronic_conditions_input', '').strip()
+        
+        # Split by comma and clean up whitespace
+        allergies = [a.strip() for a in allergies_input.split(',') if a.strip()] if allergies_input else []
+        chronic_conditions = [c.strip() for c in chronic_conditions_input.split(',') if c.strip()] if chronic_conditions_input else []
+        
+        print(f"Allergies parsed: {allergies}")
+        print(f"Chronic conditions parsed: {chronic_conditions}")
+
+        # Validate numeric fields
+        height_int = None
+        weight_int = None
+        
+        if height:
+            try:
+                height_int = int(height)
+                if height_int <= 0 or height_int > 300:
+                    return jsonify({"message": "Invalid height value"}), 400
+            except ValueError:
+                return jsonify({"message": "Height must be a number"}), 400
+        
+        if weight:
+            try:
+                weight_int = int(weight)
+                if weight_int <= 0 or weight_int > 500:
+                    return jsonify({"message": "Invalid weight value"}), 400
+            except ValueError:
+                return jsonify({"message": "Weight must be a number"}), 400
+
+        # Get email from existing user data (if available) or from form
+        email = request.form.get('email', '')
+
+        # 5. PREPARE PATIENT DATA
+        patient_data = {
+            "full_name": full_name,
+            "email": email if email else None,
+            "profile_completed": True,
+            "profile_image": profile_url,
+            "created_at": datetime.now().isoformat(),
+
+            "personal_details": {
+                "dob": date_of_birth,
+                "gender": gender,
+                "blood_group": blood_group if blood_group else None,
+                "height": height_int,
+                "weight": weight_int
+            },
+
+            "medical_profile": {
+                "allergies": allergies,
+                "chronic_conditions": chronic_conditions
+            },
+
+            "emergency_contact": {
+                "name": emergency_name,
+                "phone": emergency_phone,
+                "relation": emergency_relation
+            }
+        }
+
+        # 6. SAVE TO FIRESTORE
+        try:
+            # Use merge=True to preserve existing data (like email from registration)
+            db.collection('patients').document(uid).set(patient_data, merge=True)
+            
+            print(f"✅ Patient profile saved for UID: {uid}")
+            
+            return jsonify({
+                "message": "Patient profile saved successfully",
+                "uid": uid,
+                "profile_completed": True
+            }), 200
+
+        except Exception as db_error:
+            print(f"❌ Firestore Error: {db_error}")
+            # Cleanup uploaded image if database save fails
+            if profile_url != "default_avatar":
+                try:
+                    blob.delete()
+                    print("🗑️ Cleaned up uploaded file after database error")
+                except:
+                    pass
+            return jsonify({"message": "Failed to save profile to database"}), 500
 
     except Exception as e:
-        print(f"Database Error: {e}")
-        return jsonify({"error": "Failed to save profile"}), 500
+        print(f"❌ Unexpected Error in patient_form: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"message": "An unexpected error occurred"}), 500
 
 # Helper function to extract coordinates from Google Maps link
 def extract_coordinates_from_maps_link(maps_link):
@@ -594,90 +700,202 @@ def search():
         print(f"Search Error: {e}")
         return jsonify({"error": "Search failed"}), 500
     
+ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
+def allowed_file(filename):
+    """Check if file has allowed extension"""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @app.route('/doctor-form', methods=['POST'])
 def doctor_form():
-    token = request.form.get('token')
-    
-    uid = token_to_uid(token)
-    if not uid:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    degree_file = request.files.get('degree_proof')
-    
-    degree_url = "pending_upload" 
-    if degree_file:
-        print(f"File received: {degree_file.filename}")
-
-    full_name = request.form.get('full_name')
-    specialization = request.form.get('specialization')
-    reg_number = request.form.get('reg_number')
-    medical_council = request.form.get('medical_council')
-    reg_year = request.form.get('reg_year')
-    experience_years = request.form.get('experience_years')
-    
-    clinic_name = request.form.get('clinic_name')
-    address_line = request.form.get('address_line')
-    
-    city = request.form.get('city', '').lower().strip() 
-    zip_code = request.form.get('zip_code')
-    google_maps_link = request.form.get('google_maps_link')
-    
-    consultation_fee = request.form.get('consultation_fee')
-    morning_start = request.form.get('morning_start')
-    morning_end = request.form.get('morning_end')
-    evening_start = request.form.get('evening_start')
-    evening_end = request.form.get('evening_end')
-
-    days_open_str = request.form.get('days_open')
-    days_open = json.loads(days_open_str) if days_open_str else {}
-
-    doctor_data = {
-        "full_name": full_name,
-        "specialization": specialization,
-        "city": city,
-        "consultation_fee": consultation_fee,
-        "is_verified": False,
-        "profile_completed": True,
-
-        "personal_details": {
-            "reg_number": reg_number,
-            "medical_council": medical_council,
-            "reg_year": reg_year,
-            "degree_proof_url": degree_url, 
-            "experience_years": experience_years
-        },
+    try:
+        # 1. TOKEN VALIDATION
+        token = request.form.get('token')
+        if not token:
+            return jsonify({"message": "Token is required"}), 400
         
-        "clinic_details": {
-            "name": clinic_name,
-            "address": address_line,
-            "zip_code": zip_code,
-            "google_maps_link": google_maps_link
-        },
+        uid = token_to_uid(token)
+        if not uid:
+            return jsonify({"message": "Unauthorized - Invalid token"}), 401
+
+        # 2. REQUIRED FIELD VALIDATION
+        required_fields = [
+            'full_name', 'specialization', 'reg_number', 'medical_council',
+            'reg_year', 'experience_years', 'clinic_name', 'address_line',
+            'city', 'zip_code', 'consultation_fee', 'morning_start',
+            'morning_end', 'evening_start', 'evening_end', 'days_open'
+        ]
         
-        "availability": {
-            "days_open": days_open,
-            "morning_shift": {
-                "start": morning_start,
-                "end": morning_end
+        missing_fields = [field for field in required_fields if not request.form.get(field)]
+        if missing_fields:
+            return jsonify({
+                "message": f"Missing required fields: {', '.join(missing_fields)}"
+            }), 400
+
+        # 3. FILE VALIDATION AND UPLOAD
+        degree_file = request.files.get('degree_proof')
+        degree_url = "pending_upload"
+        
+        if not degree_file:
+            return jsonify({"message": "Degree proof file is required"}), 400
+        
+        if degree_file.filename == '':
+            return jsonify({"message": "No file selected"}), 400
+        
+        if not allowed_file(degree_file.filename):
+            return jsonify({
+                "message": "Invalid file type. Allowed: PDF, PNG, JPG, JPEG"
+            }), 400
+        
+        # Check file size
+        degree_file.seek(0, os.SEEK_END)
+        file_size = degree_file.tell()
+        degree_file.seek(0)
+        
+        if file_size > MAX_FILE_SIZE:
+            return jsonify({"message": "File size exceeds 5MB limit"}), 400
+        
+        # Upload to Firebase Storage
+        try:
+            filename = secure_filename(degree_file.filename)
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            blob_name = f"doctor_degrees/{uid}/{timestamp}_{filename}"
+            
+            bucket = storage.bucket()
+            blob = bucket.blob(blob_name)
+            
+            # Upload file
+            blob.upload_from_file(
+                degree_file,
+                content_type=degree_file.content_type
+            )
+            
+            # Make it publicly accessible (optional - adjust based on your security needs)
+            blob.make_public()
+            degree_url = blob.public_url
+            
+            print(f"✅ File uploaded successfully: {blob_name}")
+            
+        except Exception as upload_error:
+            print(f"❌ Firebase Storage Error: {upload_error}")
+            return jsonify({"message": "Failed to upload degree proof"}), 500
+
+        # 4. EXTRACT AND VALIDATE FORM DATA
+        full_name = request.form.get('full_name').strip()
+        specialization = request.form.get('specialization').strip()
+        reg_number = request.form.get('reg_number').strip()
+        medical_council = request.form.get('medical_council').strip()
+        reg_year = request.form.get('reg_year').strip()
+        experience_years = request.form.get('experience_years').strip()
+        
+        clinic_name = request.form.get('clinic_name').strip()
+        address_line = request.form.get('address_line').strip()
+        city = request.form.get('city', '').lower().strip()
+        zip_code = request.form.get('zip_code').strip()
+        google_maps_link = request.form.get('google_maps_link', '').strip()
+        
+        consultation_fee = request.form.get('consultation_fee').strip()
+        morning_start = request.form.get('morning_start')
+        morning_end = request.form.get('morning_end')
+        evening_start = request.form.get('evening_start')
+        evening_end = request.form.get('evening_end')
+
+        # Parse days_open JSON
+        days_open_str = request.form.get('days_open')
+        try:
+            days_open = json.loads(days_open_str) if days_open_str else {}
+        except json.JSONDecodeError:
+            return jsonify({"message": "Invalid days_open format"}), 400
+        
+        # Validate at least one day is selected
+        if not any(days_open.values()):
+            return jsonify({"message": "Please select at least one working day"}), 400
+
+        # Validate numeric fields
+        try:
+            reg_year_int = int(reg_year)
+            experience_years_int = int(experience_years)
+            consultation_fee_int = int(consultation_fee)
+            
+            if reg_year_int < 1950 or reg_year_int > 2026:
+                return jsonify({"message": "Invalid registration year"}), 400
+            
+            if experience_years_int < 0 or experience_years_int > 70:
+                return jsonify({"message": "Invalid experience years"}), 400
+            
+            if consultation_fee_int < 0:
+                return jsonify({"message": "Invalid consultation fee"}), 400
+                
+        except ValueError:
+            return jsonify({"message": "Invalid numeric values provided"}), 400
+
+        # 5. PREPARE DOCTOR DATA
+        doctor_data = {
+            "full_name": full_name,
+            "specialization": specialization,
+            "city": city,
+            "consultation_fee": consultation_fee_int,
+            "is_verified": False,
+            "profile_completed": True,
+            "created_at": datetime.now().isoformat(),
+
+            "personal_details": {
+                "reg_number": reg_number,
+                "medical_council": medical_council,
+                "reg_year": reg_year_int,
+                "degree_proof_url": degree_url,
+                "experience_years": experience_years_int
             },
-            "evening_shift": {
-                "start": evening_start,
-                "end": evening_end
+            
+            "clinic_details": {
+                "name": clinic_name,
+                "address": address_line,
+                "zip_code": zip_code,
+                "google_maps_link": google_maps_link if google_maps_link else None
+            },
+            
+            "availability": {
+                "days_open": days_open,
+                "morning_shift": {
+                    "start": morning_start,
+                    "end": morning_end
+                },
+                "evening_shift": {
+                    "start": evening_start,
+                    "end": evening_end
+                }
             }
         }
-    }
 
-    try:
-        db.collection('doctors').document(uid).set(doctor_data)
-        
-        return jsonify({
-            "message": "Doctor profile saved successfully",
-            "uid": uid
-        }), 200
+        # 6. SAVE TO FIRESTORE
+        try:
+            db.collection('doctors').document(uid).set(doctor_data)
+            
+            print(f"✅ Doctor profile saved for UID: {uid}")
+            
+            return jsonify({
+                "message": "Doctor profile saved successfully",
+                "uid": uid,
+                "profile_completed": True
+            }), 200
+
+        except Exception as db_error:
+            print(f"❌ Firestore Error: {db_error}")
+            # If database save fails, try to delete the uploaded file
+            try:
+                blob.delete()
+                print("🗑️ Cleaned up uploaded file after database error")
+            except:
+                pass
+            return jsonify({"message": "Failed to save profile to database"}), 500
 
     except Exception as e:
-        print(f"Database Error: {e}")
-        return jsonify({"error": "Failed to save profile"}), 500
+        print(f"❌ Unexpected Error in doctor_form: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"message": "An unexpected error occurred"}), 500
 
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
