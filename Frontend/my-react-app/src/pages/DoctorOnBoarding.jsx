@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-//import { useAuth } from '../contexts/auth'; 
 
 export default function DoctorOnboarding() {
   const navigate = useNavigate();
-  //const { getToken } = useAuth(); 
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -36,12 +34,10 @@ export default function DoctorOnboarding() {
     }
   });
 
-  // Handle Text Inputs
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle Checkboxes for Days
   const handleDayToggle = (day) => {
     setFormData({
       ...formData,
@@ -49,7 +45,6 @@ export default function DoctorOnboarding() {
     });
   };
 
-  // Handle File Upload
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -62,50 +57,53 @@ export default function DoctorOnboarding() {
     }
   };
 
-  // --- LOGIC FIX HERE ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // GUARD CLAUSE: If we are not on the last step, just move to the next step.
-    // This prevents accidental submission if user hits "Enter" key on Step 1 or 2.
-    if (step < 3) {
-        setStep(step + 1);
-        return;
-    }
-
-    // --- ONLY PROCEED IF STEP IS 3 ---
     setLoading(true);
 
     try {
       const token = localStorage.getItem('token'); 
+      if (!token) {
+        alert("Session expired. Please login again.");
+        navigate('/login');
+        return;
+      }
+
       const submissionData = new FormData();
       
+      // Append file
       if (degreeFile) {
         submissionData.append('degree_proof', degreeFile);
       }
       
+      // Append token for backend verification
       submissionData.append('token', token);
 
+      // Append all other form fields
       Object.keys(formData).forEach(key => {
         if (key === 'days_open') {
+          // Backend expects JSON string for objects in FormData
           submissionData.append(key, JSON.stringify(formData[key]));
         } else {
           submissionData.append(key, formData[key]);
         }
       });
 
-      await axios.post('http://127.0.0.1:5000/doctor-form', submissionData, {
+      const response = await axios.post('http://127.0.0.1:5000/doctor-form', submissionData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      alert("Profile Setup Complete!");
-      navigate('/doctor-dashboard'); // Or wherever you want to send them
+      if (response.status === 200) {
+        alert("Profile Setup Complete!");
+        navigate('/doctor-dashboard');
+      }
 
     } catch (error) {
-      console.error("Error submitting form", error);
-      alert("Failed to save profile. Please try again.");
+      console.error("Submission Error:", error.response?.data || error.message);
+      const errorMsg = error.response?.data?.message || "Failed to save profile. Please try again.";
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -146,8 +144,8 @@ export default function DoctorOnboarding() {
         <label className="block text-sm font-medium text-teal-800 mb-2">Upload Degree / Medical License</label>
         <div className="flex items-center gap-4">
           <label className="cursor-pointer bg-white border border-teal-300 text-teal-700 px-4 py-2 rounded shadow-sm hover:bg-teal-50 transition">
-             Choose File
-             <input type="file" className="hidden" onChange={handleFileChange} accept="image/*,.pdf" />
+              Choose File
+              <input type="file" className="hidden" onChange={handleFileChange} accept="image/*,.pdf" />
           </label>
           <span className="text-sm text-gray-500">{degreeFile ? degreeFile.name : "No file chosen"}</span>
         </div>
@@ -183,8 +181,8 @@ export default function DoctorOnboarding() {
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Google Maps Link</label>
-        <input name="google_maps_link" value={formData.google_maps_link} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-teal-500 outline-none" placeholder="http://googleusercontent.com/maps.google.com/..." />
+        <label className="block text-sm font-medium text-gray-700">Google Maps Link (Optional)</label>
+        <input name="google_maps_link" value={formData.google_maps_link} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-teal-500 outline-none" placeholder="https://maps.google.com/..." />
       </div>
     </div>
   );
@@ -288,7 +286,7 @@ export default function DoctorOnboarding() {
 
             {step < 3 ? (
               <button 
-                type="button" // Important: Keep this as button
+                type="button" 
                 onClick={() => setStep(step + 1)}
                 className="px-6 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 shadow-md transition"
               >
@@ -296,7 +294,7 @@ export default function DoctorOnboarding() {
               </button>
             ) : (
               <button 
-                type="submit" // Only the last button is submit
+                type="submit" 
                 disabled={loading}
                 className="px-8 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 shadow-lg font-bold transition flex items-center gap-2"
               >

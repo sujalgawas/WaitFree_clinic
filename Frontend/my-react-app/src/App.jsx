@@ -28,6 +28,7 @@ import DoctorHome from './pages/DoctorHome';
 import DoctorProfile from './pages/DoctorProfile';
 import MyAppointments from './pages/MyAppoinments';
 import DoctorSchedule from './pages/DoctorSchedule';
+import BookingTracker from './pages/BookingTracker';
 
 import API_KEYS from './assets/API_keys.json';
 
@@ -251,6 +252,12 @@ function MainLayout() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/BookingTracker" element={
+          <ProtectedRoute requiredUserType="patient">
+            <BookingTracker darkMode={darkMode} />
+          </ProtectedRoute>
+        } />
 
         <Route path="/doctor-schedule" element={
           <ProtectedRoute requiredUserType="doctor">

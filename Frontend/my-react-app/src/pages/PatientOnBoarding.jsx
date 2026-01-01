@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axios from 'axios'; // Ensure axios is installed
 import { useNavigate } from 'react-router-dom';
+import { User, Heart, Phone, Upload, CheckCircle } from 'lucide-react';
 
-export default function PatientOnboarding() {
+export default function PatientOnboarding({ darkMode = false }) {
   const navigate = useNavigate();
-  
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
-  // Form State
   const [formData, setFormData] = useState({
     full_name: '',
     date_of_birth: '',
@@ -18,11 +17,8 @@ export default function PatientOnboarding() {
     blood_group: '',
     height: '',
     weight: '',
-    
-    // Medical History (We will treat these as comma separated strings in UI)
     allergies_input: '',
     chronic_conditions_input: '',
-    
     emergency_name: '',
     emergency_phone: '',
     emergency_relation: ''
@@ -40,13 +36,12 @@ export default function PatientOnboarding() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Guard Clause: Prevent submission if not on final step
+  const handleSubmit = async () => {
+    // If not on the last step, just increment the step
     if (step < 3) {
-        setStep(step + 1);
-        return;
+      setStep(step + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
     }
 
     setLoading(true);
@@ -54,225 +49,521 @@ export default function PatientOnboarding() {
     try {
       const token = localStorage.getItem('token');
       const submissionData = new FormData();
-      
-      // Append Token & File
+
+      // 1. Add Token & Profile Image
       submissionData.append('token', token);
       if (profileImage) {
-        submissionData.append('profile_image', profileImage);
+        submissionData.append('profile_image', profileImage); // Matches backend key
       }
 
-      // Convert comma-separated strings to JSON arrays for Backend
-      const allergiesArray = formData.allergies_input.split(',').map(item => item.trim()).filter(i => i);
-      const conditionsArray = formData.chronic_conditions_input.split(',').map(item => item.trim()).filter(i => i);
+      // 2. Add Basic Info
+      submissionData.append('full_name', formData.full_name);
+      submissionData.append('date_of_birth', formData.date_of_birth);
+      submissionData.append('gender', formData.gender);
+      submissionData.append('blood_group', formData.blood_group);
+      submissionData.append('height', formData.height);
+      submissionData.append('weight', formData.weight);
 
-      submissionData.append('allergies', JSON.stringify(allergiesArray));
-      submissionData.append('chronic_conditions', JSON.stringify(conditionsArray));
+      // 3. Convert Comma-Separated Strings to JSON Arrays (Crucial for your backend)
+      const allergiesArr = formData.allergies_input
+        ? formData.allergies_input.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+      const chronicArr = formData.chronic_conditions_input
+        ? formData.chronic_conditions_input.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
 
-      // Append standard text fields
-      const keysToSkip = ['allergies_input', 'chronic_conditions_input'];
-      Object.keys(formData).forEach(key => {
-        if (!keysToSkip.includes(key)) {
-          submissionData.append(key, formData[key]);
-        }
-      });
+      submissionData.append('allergies', JSON.stringify(allergiesArr));
+      submissionData.append('chronic_conditions', JSON.stringify(chronicArr));
 
-      // Send to Backend
-      await axios.post('http://127.0.0.1:5000/patient-form', submissionData, {
+      // 4. Add Emergency Contact
+      submissionData.append('emergency_name', formData.emergency_name);
+      submissionData.append('emergency_phone', formData.emergency_phone);
+      submissionData.append('emergency_relation', formData.emergency_relation);
+
+      // 5. POST to Backend
+      const response = await axios.post('http://127.0.0.1:5000/patient-form', submissionData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      alert("Profile Setup Complete!");
-      navigate('/dashboard'); // Go to Patient Dashboard
+      if (response.status === 200) {
+        alert("✅ Profile Setup Complete!");
+        navigate('/patient-dashboard'); 
+      }
 
     } catch (error) {
-      console.error("Error submitting form", error);
-      alert("Failed to save profile. Please try again.");
+      console.error("Submission Error:", error.response?.data || error.message);
+      alert(error.response?.data?.message || "Failed to save profile. Please check if backend is running.");
     } finally {
       setLoading(false);
     }
   };
-
   // --- STEPS UI ---
 
   const renderStep1 = () => (
-    <div className="space-y-4 animate-fadeIn">
-      <h3 className="text-xl font-semibold text-blue-800 border-b pb-2">Personal Information</h3>
+    <div className="space-y-6 animate-fadeIn">
+      <div className="flex items-center gap-3 mb-6">
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+          darkMode ? 'bg-blue-900/50 text-blue-400' : 'bg-blue-100 text-blue-600'
+        }`}>
+          <User className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+            Personal Information
+          </h3>
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            Tell us about yourself
+          </p>
+        </div>
+      </div>
       
       {/* Profile Pic Upload */}
-      <div className="flex items-center gap-4 mb-4">
-        <div className="w-20 h-20 rounded-full bg-gray-200 overflow-hidden border-2 border-blue-200">
+      <div className={`flex items-center gap-6 p-6 rounded-2xl border-2 border-dashed ${
+        darkMode 
+          ? 'border-blue-700 bg-gradient-to-br from-blue-900/30 to-indigo-900/30' 
+          : 'border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50'
+      }`}>
+        <div className={`w-24 h-24 rounded-full overflow-hidden border-4 ${
+          darkMode ? 'border-blue-700 bg-gray-800' : 'border-blue-200 bg-gray-200'
+        }`}>
           {previewUrl ? (
             <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            <div className={`w-full h-full flex items-center justify-center ${
+              darkMode ? 'text-gray-600' : 'text-gray-400'
+            }`}>
+              <User className="w-10 h-10" />
             </div>
           )}
         </div>
-        <label className="cursor-pointer text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded border border-blue-200 hover:bg-blue-100">
-           Upload Photo
-           <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
-        </label>
+        <div className="flex-1">
+          <label className={`cursor-pointer inline-flex items-center gap-2 px-6 py-3 rounded-xl border-2 transition-all font-medium shadow-sm hover:shadow-md ${
+            darkMode 
+              ? 'bg-gray-800 border-blue-600 text-blue-400 hover:bg-gray-700' 
+              : 'bg-white border-blue-300 text-blue-700 hover:bg-blue-50'
+          }`}>
+            <Upload className="w-4 h-4" />
+            Upload Photo
+            <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
+          </label>
+          <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            Supported formats: JPG, PNG (Max 5MB)
+          </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Full Name</label>
-          <input name="full_name" value={formData.full_name} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="John Doe" required />
+          <label className={`block text-sm font-semibold mb-2 ${
+            darkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
+            Full Name <span className="text-red-600">*</span>
+          </label>
+          <input 
+            name="full_name" 
+            value={formData.full_name} 
+            onChange={handleChange} 
+            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
+              darkMode 
+                ? 'border-gray-600 bg-gray-800 text-white' 
+                : 'border-gray-300 bg-white'
+            }`}
+            placeholder="John Doe" 
+          />
         </div>
         <div>
-           <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
-           <input type="date" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" required />
+          <label className={`block text-sm font-semibold mb-2 ${
+            darkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
+            Date of Birth <span className="text-red-600">*</span>
+          </label>
+          <input 
+            type="date" 
+            name="date_of_birth" 
+            value={formData.date_of_birth} 
+            onChange={handleChange} 
+            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
+              darkMode 
+                ? 'border-gray-600 bg-gray-800 text-white' 
+                : 'border-gray-300 bg-white'
+            }`}
+          />
         </div>
         <div>
-           <label className="block text-sm font-medium text-gray-700">Gender</label>
-           <select name="gender" value={formData.gender} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white" required>
-             <option value="">Select...</option>
-             <option value="Male">Male</option>
-             <option value="Female">Female</option>
-             <option value="Other">Other</option>
-           </select>
+          <label className={`block text-sm font-semibold mb-2 ${
+            darkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
+            Gender <span className="text-red-600">*</span>
+          </label>
+          <select 
+            name="gender" 
+            value={formData.gender} 
+            onChange={handleChange} 
+            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all appearance-none ${
+              darkMode 
+                ? 'border-gray-600 bg-gray-800 text-white' 
+                : 'border-gray-300 bg-white'
+            }`}
+          >
+            <option value="">Select...</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
         </div>
         <div>
-           <label className="block text-sm font-medium text-gray-700">Blood Group</label>
-           <select name="blood_group" value={formData.blood_group} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-             <option value="">Select...</option>
-             <option value="A+">A+</option>
-             <option value="A-">A-</option>
-             <option value="B+">B+</option>
-             <option value="B-">B-</option>
-             <option value="O+">O+</option>
-             <option value="O-">O-</option>
-             <option value="AB+">AB+</option>
-             <option value="AB-">AB-</option>
-           </select>
+          <label className={`block text-sm font-semibold mb-2 ${
+            darkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
+            Blood Group
+          </label>
+          <select 
+            name="blood_group" 
+            value={formData.blood_group} 
+            onChange={handleChange} 
+            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all appearance-none ${
+              darkMode 
+                ? 'border-gray-600 bg-gray-800 text-white' 
+                : 'border-gray-300 bg-white'
+            }`}
+          >
+            <option value="">Select...</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+">B+</option>
+            <option value="B-">B-</option>
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+          </select>
         </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-6">
         <div>
-            <label className="block text-sm font-medium text-gray-700">Height (cm)</label>
-            <input type="number" name="height" value={formData.height} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="175" />
+          <label className={`block text-sm font-semibold mb-2 ${
+            darkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
+            Height (cm)
+          </label>
+          <input 
+            type="number" 
+            name="height" 
+            value={formData.height} 
+            onChange={handleChange} 
+            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
+              darkMode 
+                ? 'border-gray-600 bg-gray-800 text-white' 
+                : 'border-gray-300 bg-white'
+            }`}
+            placeholder="175" 
+          />
         </div>
         <div>
-            <label className="block text-sm font-medium text-gray-700">Weight (kg)</label>
-            <input type="number" name="weight" value={formData.weight} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="70" />
+          <label className={`block text-sm font-semibold mb-2 ${
+            darkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
+            Weight (kg)
+          </label>
+          <input 
+            type="number" 
+            name="weight" 
+            value={formData.weight} 
+            onChange={handleChange} 
+            className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
+              darkMode 
+                ? 'border-gray-600 bg-gray-800 text-white' 
+                : 'border-gray-300 bg-white'
+            }`}
+            placeholder="70" 
+          />
         </div>
       </div>
     </div>
   );
 
   const renderStep2 = () => (
-    <div className="space-y-4 animate-fadeIn">
-      <h3 className="text-xl font-semibold text-blue-800 border-b pb-2">Medical History</h3>
-      <p className="text-sm text-gray-500">This helps doctors understand your background before the visit.</p>
+    <div className="space-y-6 animate-fadeIn">
+      <div className="flex items-center gap-3 mb-6">
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+          darkMode ? 'bg-red-900/50 text-red-400' : 'bg-red-100 text-red-600'
+        }`}>
+          <Heart className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+            Medical History
+          </h3>
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            This helps doctors understand your background
+          </p>
+        </div>
+      </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700">Allergies</label>
+        <label className={`block text-sm font-semibold mb-2 ${
+          darkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>
+          Allergies
+        </label>
         <textarea 
-            name="allergies_input" 
-            value={formData.allergies_input} 
-            onChange={handleChange} 
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" 
-            placeholder="e.g. Peanuts, Penicillin, Dust (Separate by comma)" 
-            rows="2" 
+          name="allergies_input" 
+          value={formData.allergies_input} 
+          onChange={handleChange} 
+          className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none ${
+            darkMode 
+              ? 'border-gray-600 bg-gray-800 text-white' 
+              : 'border-gray-300 bg-white'
+          }`}
+          placeholder="e.g. Peanuts, Penicillin, Dust (Separate by comma)" 
+          rows="3" 
         />
+        <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          List any known allergies, separated by commas
+        </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Chronic Conditions</label>
+        <label className={`block text-sm font-semibold mb-2 ${
+          darkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>
+          Chronic Conditions
+        </label>
         <textarea 
-            name="chronic_conditions_input" 
-            value={formData.chronic_conditions_input} 
-            onChange={handleChange} 
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" 
-            placeholder="e.g. Diabetes, Hypertension, Asthma (Separate by comma)" 
-            rows="2" 
+          name="chronic_conditions_input" 
+          value={formData.chronic_conditions_input} 
+          onChange={handleChange} 
+          className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none ${
+            darkMode 
+              ? 'border-gray-600 bg-gray-800 text-white' 
+              : 'border-gray-300 bg-white'
+          }`}
+          placeholder="e.g. Diabetes, Hypertension, Asthma (Separate by comma)" 
+          rows="3" 
         />
+        <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          List any chronic health conditions, separated by commas
+        </p>
+      </div>
+
+      <div className={`p-5 rounded-xl border ${
+        darkMode 
+          ? 'bg-yellow-900/20 border-yellow-700' 
+          : 'bg-yellow-50 border-yellow-300'
+      }`}>
+        <p className={`text-sm ${darkMode ? 'text-yellow-400' : 'text-yellow-800'}`}>
+          <strong>Note:</strong> This information is confidential and will only be shared with your healthcare providers.
+        </p>
       </div>
     </div>
   );
 
   const renderStep3 = () => (
-    <div className="space-y-4 animate-fadeIn">
-      <h3 className="text-xl font-semibold text-blue-800 border-b pb-2">Emergency Contact</h3>
+    <div className="space-y-6 animate-fadeIn">
+      <div className="flex items-center gap-3 mb-6">
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+          darkMode ? 'bg-green-900/50 text-green-400' : 'bg-green-100 text-green-600'
+        }`}>
+          <Phone className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+            Emergency Contact
+          </h3>
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            Someone we can reach in case of emergency
+          </p>
+        </div>
+      </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700">Contact Person Name</label>
-        <input name="emergency_name" value={formData.emergency_name} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" required />
+        <label className={`block text-sm font-semibold mb-2 ${
+          darkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>
+          Contact Person Name <span className="text-red-600">*</span>
+        </label>
+        <input 
+          name="emergency_name" 
+          value={formData.emergency_name} 
+          onChange={handleChange} 
+          className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
+            darkMode 
+              ? 'border-gray-600 bg-gray-800 text-white' 
+              : 'border-gray-300 bg-white'
+          }`}
+          placeholder="Jane Doe"
+        />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Relationship</label>
-        <input name="emergency_relation" value={formData.emergency_relation} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Father, Spouse" required />
+        <label className={`block text-sm font-semibold mb-2 ${
+          darkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>
+          Relationship <span className="text-red-600">*</span>
+        </label>
+        <input 
+          name="emergency_relation" 
+          value={formData.emergency_relation} 
+          onChange={handleChange} 
+          className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
+            darkMode 
+              ? 'border-gray-600 bg-gray-800 text-white' 
+              : 'border-gray-300 bg-white'
+          }`}
+          placeholder="e.g. Mother, Spouse, Sibling" 
+        />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Phone Number</label>
-        <input type="tel" name="emergency_phone" value={formData.emergency_phone} onChange={handleChange} className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" required />
+        <label className={`block text-sm font-semibold mb-2 ${
+          darkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>
+          Phone Number <span className="text-red-600">*</span>
+        </label>
+        <input 
+          type="tel" 
+          name="emergency_phone" 
+          value={formData.emergency_phone} 
+          onChange={handleChange} 
+          className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
+            darkMode 
+              ? 'border-gray-600 bg-gray-800 text-white' 
+              : 'border-gray-300 bg-white'
+          }`}
+          placeholder="+91 98765 43210"
+        />
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6 font-inter">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden">
-        
-        {/* Header */}
-        <div className="bg-blue-600 p-6 text-white text-center">
-          <h1 className="text-2xl font-bold">Patient Registration</h1>
-          <p className="text-blue-100 text-sm">Step {step} of 3</p>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-200 h-1.5">
-          <div 
-            className="bg-blue-500 h-1.5 transition-all duration-300" 
-            style={{ width: `${(step / 3) * 100}%` }}
-          ></div>
-        </div>
-
-        {/* Form Content */}
-        <form onSubmit={handleSubmit} className="p-8">
+    <div className={`min-h-screen mt-11 py-8 px-4 transition-colors ${
+      darkMode 
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+        : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100'
+    }`}>
+      <div className="max-w-4xl mx-auto">
+        <div className={`rounded-3xl shadow-2xl overflow-hidden ${
+          darkMode ? 'bg-gray-800' : 'bg-white'
+        }`}>
           
-          {step === 1 && renderStep1()}
-          {step === 2 && renderStep2()}
-          {step === 3 && renderStep3()}
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8 pt-4 border-t">
-            {step > 1 ? (
-              <button 
-                type="button" 
-                onClick={() => setStep(step - 1)}
-                className="px-6 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
-              >
-                Back
-              </button>
-            ) : (
-                <div></div>
-            )}
-
-            {step < 3 ? (
-              <button 
-                type="button" 
-                onClick={() => setStep(step + 1)}
-                className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-md transition"
-              >
-                Next Step
-              </button>
-            ) : (
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="px-8 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 shadow-lg font-bold transition flex items-center gap-2"
-              >
-                {loading ? 'Saving...' : 'Finish Profile'}
-              </button>
-            )}
+          {/* Header */}
+          <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 text-white">
+            <div className="absolute inset-0 bg-black opacity-5"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <User className="w-8 h-8" />
+                </div>
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold text-center mb-2">Patient Registration</h1>
+              <p className="text-blue-100 text-center text-sm md:text-base">Step {step} of 3</p>
+            </div>
           </div>
-        </form>
 
+          {/* Progress Indicator */}
+          <div className="px-8 pt-8">
+            <div className="relative flex items-center mb-6">
+              <div className={`absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full ${
+                darkMode ? 'bg-gray-700' : 'bg-gray-200'
+              }`} />
+
+              <div
+                className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
+                style={{ width: `${(step - 1) * 50}%` }}
+              />
+
+              {[1, 2, 3].map((num) => (
+                <div
+                  key={num}
+                  className={`relative z-10 ${
+                    num === 1 ? '' : num === 2 ? 'absolute left-1/2 -translate-x-1/2' : 'ml-auto'
+                  }`}
+                >
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
+                      step >= num
+                        ? 'bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg'
+                        : darkMode ? 'bg-gray-700 text-gray-500' : 'bg-gray-200 text-gray-400'
+                    }`}
+                  >
+                    {step > num ? <CheckCircle className="w-5 h-5" /> : num}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className={`flex justify-between text-xs font-medium ${
+                darkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}
+            >
+              <span>Personal</span>
+              <span>Medical</span>
+              <span>Emergency</span>
+            </div>
+          </div>
+
+          {/* Form Content */}
+          <div className="p-8">
+            {step === 1 && renderStep1()}
+            {step === 2 && renderStep2()}
+            {step === 3 && renderStep3()}
+
+            {/* Navigation Buttons */}
+            <div className={`flex justify-between items-center mt-10 pt-6 border-t ${
+              darkMode ? 'border-gray-700' : 'border-gray-200'
+            }`}>
+              {step > 1 ? (
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setStep(step - 1);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className={`px-6 py-3 rounded-xl border-2 transition-all font-semibold flex items-center gap-2 shadow-sm hover:shadow ${
+                    darkMode 
+                      ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <span>←</span> Back
+                </button>
+              ) : (
+                <div></div>
+              )}
+
+              {step < 3 ? (
+                <button 
+                  type="button" 
+                  onClick={handleSubmit}
+                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all font-bold flex items-center gap-2"
+                >
+                  Next Step <span>→</span>
+                </button>
+              ) : (
+                <button 
+                  type="button" 
+                  disabled={loading}
+                  onClick={handleSubmit}
+                  className="px-10 py-3 rounded-xl bg-gradient-to-r from-green-600 to-teal-600 text-white hover:from-green-700 hover:to-teal-700 shadow-xl hover:shadow-2xl transition-all font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      Finish Profile
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -3,6 +3,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from firebase_admin import credentials, initialize_app, firestore, auth
 import json
+import re
+from urllib.parse import unquote
 
 cred = credentials.Certificate("./serviceAccountKey.json")
 initialize_app(cred)
@@ -97,6 +99,276 @@ def patient_form():
     except Exception as e:
         print(f"Database Error: {e}")
         return jsonify({"error": "Failed to save profile"}), 500
+
+# Helper function to extract coordinates from Google Maps link
+def extract_coordinates_from_maps_link(maps_link):
+    """
+    Extract lat/lng from Google Maps link
+    Supports multiple URL formats
+    """
+    import re
+    
+    if not maps_link:
+        return None
+    
+    # Try different Google Maps URL patterns
+    patterns = [
+        r'@(-?\d+\.\d+),(-?\d+\.\d+)',  # @lat,lng format
+        r'q=(-?\d+\.\d+),(-?\d+\.\d+)',  # q=lat,lng format
+        r'll=(-?\d+\.\d+),(-?\d+\.\d+)', # ll=lat,lng format
+        r'/place/[^/]+/@(-?\d+\.\d+),(-?\d+\.\d+)', # /place format
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, maps_link)
+        if match:
+            return {
+                'lat': float(match.group(1)),
+                'lng': float(match.group(2))
+            }
+    
+    return None
+
+
+@app.route('/save-clinic-coordinates', methods=['POST'])
+def save_clinic_coordinates():
+    """
+    Save clinic coordinates directly to the doctor's profile
+    This is useful when setting up the doctor profile
+    """
+    data = request.get_json()
+    token = data.get('token')
+    lat = data.get('lat')
+    lng = data.get('lng')
+    
+    # Verify doctor
+    doctor_uid = token_to_uid(token)
+    if not doctor_uid:
+        return jsonify({"message": "Unauthorized"}), 401
+    
+    try:
+        # Update doctor's clinic location
+        db.collection('doctors').document(doctor_uid).set({
+            'clinic_details': {
+                'location': {
+                    'lat': lat,
+                    'lng': lng
+                }
+            }
+        }, merge=True)
+        
+        return jsonify({"message": "Clinic coordinates saved successfully"}), 200
+        
+    except Exception as e:
+        print(f"Error saving coordinates: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/get-appointment-details', methods=['POST'])
+def get_appointment_details():
+    data = request.get_json()
+    token = data.get('token')
+    appointment_id = data.get('appointment_id')
+    
+    # Verify user
+    patient_uid = token_to_uid(token)
+    if not patient_uid:
+        return jsonify({"message": "Unauthorized"}), 401
+    
+    try:
+        # Fetch specific appointment
+        appt_doc = db.collection('appointments').document(appointment_id).get()
+        
+        if not appt_doc.exists:
+            return jsonify({"message": "Appointment not found"}), 404
+        
+        appt_data = appt_doc.to_dict()
+        
+        # Verify this appointment belongs to the user
+        if appt_data.get('patient_uid') != patient_uid:
+            return jsonify({"message": "Unauthorized access"}), 403
+        
+        # Get doctor details for more info
+        doctor_uid = appt_data.get('doctor_uid')
+        doctor_doc = db.collection('doctors').document(doctor_uid).get()
+        
+        if doctor_doc.exists:
+            doctor_data = doctor_doc.to_dict()
+            
+            # Extract clinic location from Google Maps link if available
+            maps_link = doctor_data.get('clinic_details', {}).get('google_maps_link', '')
+            clinic_location = extract_coordinates_from_maps_link(maps_link)
+            
+            # Enrich appointment data
+            appt_data['clinic_location'] = clinic_location
+            appt_data['doctor_phone'] = doctor_data.get('clinic_details', {}).get('phone')
+            appt_data['doctor_specialization'] = doctor_data.get('specialization')
+        
+        appt_data['id'] = appt_doc.id
+        
+        # Convert timestamp if needed
+        if 'created_at' in appt_data and appt_data['created_at']:
+            appt_data['created_at'] = appt_data['created_at'].strftime('%Y-%m-%d %H:%M')
+        
+        return jsonify({"appointment": appt_data}), 200
+        
+    except Exception as e:
+        print(f"Error fetching appointment details: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+
+def extract_coordinates_from_maps_link(maps_link):
+    """
+    Extract lat/lng from Google Maps link - Improved version
+    Supports multiple URL formats including share links
+    """
+    if not maps_link:
+        return None
+    
+    # Decode URL-encoded characters
+    decoded_link = unquote(maps_link)
+    
+    # Try different Google Maps URL patterns
+    patterns = [
+        # Standard format: @lat,lng,zoom
+        r'@(-?\d+\.\d+),(-?\d+\.\d+)',
+        # Query format: q=lat,lng
+        r'q=(-?\d+\.\d+),(-?\d+\.\d+)',
+        # LatLng format: ll=lat,lng
+        r'll=(-?\d+\.\d+),(-?\d+\.\d+)',
+        # Place format with coordinates
+        r'/place/[^/]+/@(-?\d+\.\d+),(-?\d+\.\d+)',
+        # Direct coordinate format
+        r'maps\?.*?(-?\d+\.\d+),(-?\d+\.\d+)',
+        # Short URL format after redirect
+        r'destination=(-?\d+\.\d+),(-?\d+\.\d+)',
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, decoded_link)
+        if match:
+            lat = float(match.group(1))
+            lng = float(match.group(2))
+            
+            # Validate coordinates are within valid ranges
+            if -90 <= lat <= 90 and -180 <= lng <= 180:
+                print(f"Extracted coordinates: {lat}, {lng} from {maps_link}")
+                return {
+                    'lat': lat,
+                    'lng': lng
+                }
+    
+    print(f"Could not extract coordinates from: {maps_link}")
+    return None
+
+
+@app.route('/get-appointment-locations', methods=['POST'])
+def get_appointment_locations():
+    """
+    Get accurate locations for both patient and clinic
+    """
+    data = request.get_json()
+    token = data.get('token')
+    doctor_uid = data.get('doctor_uid')
+    
+    # Verify patient
+    patient_uid = token_to_uid(token)
+    if not patient_uid:
+        return jsonify({"message": "Unauthorized"}), 401
+    
+    try:
+        # Get patient location from patients collection
+        patient_doc = db.collection('patients').document(patient_uid).get()
+        patient_location = None
+        
+        if patient_doc.exists:
+            patient_data = patient_doc.to_dict()
+            last_location = patient_data.get('last_known_location', {})
+            
+            if last_location and 'lat' in last_location and 'lng' in last_location:
+                patient_location = {
+                    'lat': last_location['lat'],
+                    'lng': last_location['lng'],
+                    'address': last_location.get('address', ''),
+                    'city': last_location.get('city', '')
+                }
+                print(f"Patient location found: {patient_location}")
+        
+        # Get doctor/clinic location from doctors collection
+        doctor_doc = db.collection('doctors').document(doctor_uid).get()
+        clinic_location = None
+        clinic_info = {}
+        
+        if doctor_doc.exists:
+            doctor_data = doctor_doc.to_dict()
+            clinic_details = doctor_data.get('clinic_details', {})
+            
+            print(f"Doctor clinic details: {clinic_details}")
+            
+            # Get Google Maps link from clinic details
+            maps_link = clinic_details.get('google_maps_link', '')
+            
+            if maps_link:
+                print(f"Attempting to extract from maps link: {maps_link}")
+                clinic_location = extract_coordinates_from_maps_link(maps_link)
+                
+                if clinic_location:
+                    print(f"Successfully extracted clinic location: {clinic_location}")
+                else:
+                    print("Failed to extract coordinates from maps link")
+            else:
+                print("No Google Maps link found in clinic details")
+            
+            # Prepare clinic info
+            clinic_info = {
+                'name': clinic_details.get('name', 'Unknown Clinic'),
+                'address': clinic_details.get('address', ''),
+                'zip_code': clinic_details.get('zip_code', ''),
+                'google_maps_link': maps_link
+            }
+        else:
+            print(f"Doctor document not found for UID: {doctor_uid}")
+        
+        # Return both locations
+        return jsonify({
+            'success': True,
+            'patient_location': patient_location,
+            'clinic_location': clinic_location,
+            'clinic_info': clinic_info,
+            'debug': {
+                'doctor_uid': doctor_uid,
+                'maps_link': clinic_details.get('google_maps_link', '') if doctor_doc.exists else None
+            }
+        }), 200
+        
+    except Exception as e:
+        print(f"Error fetching locations: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/test-maps-extraction', methods=['POST'])
+def test_maps_extraction():
+    """
+    Test endpoint to verify coordinate extraction from Google Maps links
+    Useful for debugging
+    """
+    data = request.get_json()
+    maps_link = data.get('maps_link')
+    
+    if not maps_link:
+        return jsonify({"error": "No maps_link provided"}), 400
+    
+    coords = extract_coordinates_from_maps_link(maps_link)
+    
+    return jsonify({
+        'input': maps_link,
+        'extracted_coordinates': coords,
+        'success': coords is not None
+    }), 200
+
     
 @app.route('/get-doctor-schedule', methods=['POST'])
 def get_doctor_schedule():
