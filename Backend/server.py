@@ -39,6 +39,53 @@ def token_to_uid(token):
         print(f"Token verification failed: {e}")
         return None
 
+@app.route('/check-profile', methods=['POST'])
+def check_profile():
+    """Check if user has completed their profile form"""
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        user_type = data.get('user_type')
+        
+        if not token or not user_type:
+            return jsonify({"message": "Token and user_type required"}), 400
+        
+        uid = token_to_uid(token)
+        if not uid:
+            return jsonify({"message": "Unauthorized - Invalid token"}), 401
+        
+        # Check the appropriate collection based on user type
+        collection_name = 'doctors' if user_type == 'doctor' else 'patients'
+        
+        try:
+            doc = db.collection(collection_name).document(uid).get()
+            
+            if doc.exists:
+                data = doc.to_dict()
+                profile_completed = data.get('profile_completed', False)
+                
+                return jsonify({
+                    "profile_completed": profile_completed,
+                    "user_type": user_type,
+                    "uid": uid
+                }), 200
+            else:
+                # User document doesn't exist - profile not completed
+                return jsonify({
+                    "profile_completed": False,
+                    "user_type": user_type,
+                    "uid": uid
+                }), 200
+                
+        except Exception as db_error:
+            print(f"❌ Firestore Error: {db_error}")
+            return jsonify({"message": "Database error"}), 500
+            
+    except Exception as e:
+        print(f"❌ Error in check_profile: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"message": "An error occurred"}), 500
 
 @app.route('/patient-form', methods=['POST'])
 def patient_form():
