@@ -4,7 +4,7 @@ import { CheckCircle } from 'lucide-react';
 export default function Confirmation({ darkMode, appointments, setCurrentPage }) {
   const last = appointments[0];
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+    <div className={`min-h-screen mt-20 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-xl mx-auto p-6 rounded-2xl border bg-white/50 text-center">
           <CheckCircle className="mx-auto mb-4 text-green-600" size={48} />

@@ -46,13 +46,13 @@ const LandingPage = ({ darkMode }) => {
       color: 'from-purple-500 to-pink-500',
       stat: '40% Remote Visits'
     },
-    {
-      icon: Users,
-      title: '360° Patient Management',
-      description: 'Complete EHR with analytics, treatment plans, and automated follow-ups',
-      color: 'from-green-500 to-emerald-400',
-      stat: '98% Patient Satisfaction'
-    },
+{
+  icon: Clock,
+  title: 'Estimated Visit Time',
+  description: 'Shows expected total time from clinic arrival to consultation, treatment, and discharge so patients know exactly when they will go home',
+  color: 'from-green-500 to-emerald-400',
+  stat: 'Up to 60% Less Waiting Time'
+},
     {
       icon: FileText,
       title: 'Smart Digital Prescriptions',
@@ -183,24 +183,25 @@ const LandingPage = ({ darkMode }) => {
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 px-4 py-2 rounded-full font-semibold mb-6">
-                <Zap className="w-4 h-4" />
-                Trusted by 500+ Clinics Nationwide
-              </div>
+             <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-1.5 rounded-full font-bold mb-6 text-sm">
+            <CheckCircle className="w-4 h-4" />
+                Free for patients forever
+         </div>
               
-              <h1 className={`text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight ${
+              <h1 className={`text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight ${
                 darkMode ? 'text-white' : 'text-gray-900'
               }`}>
-                Medical Practice
-                <span className="text-transparent leading-relaxed bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 block">
-                  Reimagined
+               Skip the Wait.
+                <span className="text-transparent leading-normal bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 block">
+                See Your Doctor.
                 </span>
               </h1>
               
               <p className={`text-xl mb-8 leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                WaitFree Clinic automates your entire workflow — from smart appointment scheduling 
-                to virtual consultations and digital health records. Experience medicine without the paperwork.
+               Wait Free clinic Book appointments instantly. Get real-time wait times. Consult from home. 
+               Healthcare without the hassle.
               </p>
+                        
 
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 <button
@@ -310,7 +311,7 @@ const LandingPage = ({ darkMode }) => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => navigate('/login')}
+                 onClick={() => navigate('/patient-login')}
               className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 shadow-lg"
             >
               Patient Login
@@ -330,7 +331,7 @@ const LandingPage = ({ darkMode }) => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-6">
+      <section id="features" className="py-15 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className={`text-4xl md:text-5xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -372,6 +373,70 @@ const LandingPage = ({ darkMode }) => {
           </div>
         </div>
       </section>
+{/* Problem Statement
+    <section className="py-24 px-6 bg-gray-50"> {/* Softer background */}
+      {/* <div className="max-w-6xl mx-auto text-center">
+        <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-6" />
+      <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-12">
+         Healthcare Shouldn't Be This Hard
+          </h2>
+         <div className="grid md:grid-cols-3 gap-8 text-left">
+            <div className="bg-white p-8 rounded-2xl shadow-xl border border-red-100">
+             <div className="font-extrabold text-red-600 text-xl mb-4 flex items-center gap-2">
+            <Users className="w-6 h-6"/> For Patients
+              </div>
+              <ul className="space-y-3 text-gray-700">                <li className="flex items-start gap-3">
+                  <span className="text-2xl text-red-500">❌</span>
+                 <span>Hours wasted in agonizing waiting rooms</span>              </li>
+               <li className="flex items-start gap-3">
+                  <span className="text-2xl text-red-500">❌</span>
+                 <span>Frustrating busy phone lines to book</span>
+               </li>
+              <li className="flex items-start gap-3">
+                   <span className="text-2xl text-red-500">❌</span>               <span>Lost prescription papers and health history</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-2xl text-red-500">❌</span>
+                  <span>No idea when you'll actually see the doctor</span>
+                </li>
+             </ul>            </div>
+                        <div className="bg-white p-8 rounded-2xl shadow-xl border border-red-100">
+              <div className="font-extrabold text-red-600 text-xl mb-4 flex items-center gap-2">
+                <Stethoscope className="w-6 h-6"/> For Doctors
+              </div>
+               <ul className="space-y-3 text-gray-700">                <li className="flex items-start gap-3">
+                 <span className="text-2xl text-red-500">❌</span>
+                 <span>Constant phone and admin interruptions</span>
+               </li>
+               <li className="flex items-start gap-3">
+                 <span className="text-2xl text-red-500">❌</span>
+                 <span>Drowning in manual paperwork and records</span>
+                </li>
+                <li className="flex items-start gap-3">
+                   <span className="text-2xl text-red-500">❌</span>
+                 <span>Patient no-shows waste valuable time</span>
+                </li>
+                 <li className="flex items-start gap-3">
+                 <span className="text-2xl text-red-500">❌</span>
+                  <span>Hard to manage walk-ins and schedule flow</span>
+                </li>
+              </ul>
+           </div>
+
+            <div className="bg-blue-600 text-white p-8 rounded-2xl shadow-xl flex flex-col justify-center items-center text-center transform scale-105"> {/* Solution focus */}
+          {/* <CheckCircle className="w-16 h-16 mb-4" />
+             <div className="font-extrabold text-3xl mb-2">WaitFree Solves This</div>
+              <div className="text-blue-100 text-lg">Simple. Fast. Effective. Focus on <span className="font-bold">Health</span>.</div>
+           </div>
+           </div>         </div>
+     </section>  */}
+
+
+
+
+
+
+
 
       {/* Testimonials */}
       <section className={`py-20 px-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
@@ -409,131 +474,65 @@ const LandingPage = ({ darkMode }) => {
           </div>
         </div>
       </section>
+  
 
-      {/* Demo Booking Section */}
-      <section className={`py-20 px-4 ${
-        darkMode ? 'bg-gradient-to-br from-blue-900 to-indigo-900' : 'bg-gradient-to-br from-blue-600 to-indigo-600'
-      }`}>
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Start Seeing More Patients Today - Book a Free Demo!
-            </h2>
-          </div>
-
-          <form onSubmit={handleDemoSubmit} className={`rounded-2xl p-8 shadow-2xl ${
-            darkMode ? 'bg-gray-800' : 'bg-white'
-          }`}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div>
-                <label className={`block mb-2 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Clinic Name
-                </label>
-                <input
-                  type="text"
-                  value={demoForm.clinicName}
-                  onChange={(e) => setDemoForm({...demoForm, clinicName: e.target.value})}
-                  placeholder="ABC Multi-speciality"
-                  className={`w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    darkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                      : 'bg-gray-50 border-gray-300 text-gray-900'
-                  }`}
-                  required
-                />
+         
+      
+   
+     {/* Footer */}
+      <footer className="py-16 px-6 bg-gray-900 text-white">
+<div className="max-w-7xl mx-auto">
+           <div className="grid grid-cols-2 md:grid-cols-5 gap-12 mb-12"> {/* Better alignment with 5 columns */}
+         <div className="col-span-2">
+               <div className="flex items-center gap-2 mb-4">
+                                <img
+                src="/Logo.png"
+                alt="WaitFree Clinic"
+                className="h-10 w-auto mr-2"  // space between image and text
+              />
+              
+                <span className="text-2xl font-extrabold">WaitFree<span className="text-blue-400">Clinic</span></span>
               </div>
-
-              <div>
-                <label className={`block mb-2 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Doctor
-                </label>
-                <input
-                  type="text"
-                  value={demoForm.doctorName}
-                  onChange={(e) => setDemoForm({...demoForm, doctorName: e.target.value})}
-                  placeholder="Dr Asha"
-                  className={`w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    darkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                      : 'bg-gray-50 border-gray-300 text-gray-900'
-                  }`}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className={`block mb-2 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={demoForm.phoneNumber}
-                  onChange={(e) => setDemoForm({...demoForm, phoneNumber: e.target.value})}
-                  placeholder="8879866666"
-                  className={`w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    darkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                      : 'bg-gray-50 border-gray-300 text-gray-900'
-                  }`}
-                  required
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-lg font-semibold text-lg transition-colors shadow-lg"
-            >
-              Submit
-            </button>
-          </form>
-        </div>
-      </section>
-
-     
-
-      {/* Footer */}
-      <footer className={`py-12 px-4 ${darkMode ? 'bg-gray-800 border-t border-gray-700' : 'bg-gray-900'}`}>
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h3 className="text-white font-bold text-xl mb-4">WaitFree-Clinic</h3>
-              <p className="text-gray-400">
-                Making healthcare accessible and convenient for everyone.
+              <p className="text-gray-400 text-sm max-w-xs">
+                Making modern healthcare accessible and convenient by putting time back in your day.
               </p>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-4">For Doctors</h4>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Doctor Login</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Register Your Clinic</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Features</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold mb-4">For Patients</h4>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Find Doctors</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Book Appointment</a></li>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">For Patients</h4>
+              <ul className="space-y-3">
+                <li><a href="/Search" className="text-gray-400 hover:text-white transition-colors">Find Doctors</a></li>
+                <li>
+                  <a href='/patient-login' className="text-gray-400 hover:text-white transition-colors">Book Appointment</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Video Consultation</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-4">Company</h4>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">For Doctors</h4>
+              <ul className="space-y-3">
+                <li><a href="/Login" className="text-gray-400 hover:text-white transition-colors">Doctor Login</a></li>
+                <li><a href="/Login" className="text-gray-400 hover:text-white transition-colors">Register Clinic</a></li>
+                <li><a href="/Pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">Company</h4>
+              <ul className="space-y-3">
+                <li><a href="/About-us" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+                <li><a href="Contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                <li><a href="/Privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-700 pt-8 text-center text-gray-400">
-            <p>© 2025 WaitFree-Clinic. All rights reserved.</p>
+          <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
+            <p>© 2026 WaitFree-Clinic. All rights reserved. | Built with 💙 for modern healthcare.</p>
           </div>
         </div>
       </footer>
     </div>
   );
 };
-
 export default LandingPage;
+
+
+
+

@@ -438,18 +438,18 @@ export default function PatientOnboarding({ darkMode = false }) {
   );
 
   return (
-    <div className={`min-h-screen mt-11 py-8 px-4 transition-colors ${
+    <div className={`min-h-screen mt-20 py-8 px-4 transition-colors ${
       darkMode 
         ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
         : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100'
     }`}>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-8xl mx-auto">
         <div className={`rounded-3xl shadow-2xl overflow-hidden ${
           darkMode ? 'bg-gray-800' : 'bg-white'
         }`}>
           
           {/* Header */}
-          <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 text-white">
+          <div className="relative  bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 text-white">
             <div className="absolute inset-0 bg-black opacity-5"></div>
             <div className="relative z-10">
               <div className="flex items-center justify-center mb-4">
@@ -565,6 +565,56 @@ export default function PatientOnboarding({ darkMode = false }) {
           </div>
         </div>
       </div>
+      
+     {/* Footer */}
+      <footer className="py-16 px-6 bg-gray-900 text-white">
+<div className="max-w-7xl mx-auto">
+           <div className="grid grid-cols-2 md:grid-cols-5 gap-12 mb-12"> {/* Better alignment with 5 columns */}
+         <div className="col-span-2">
+               <div className="flex items-center gap-2 mb-4">
+                                <img
+                src="/Logo.png"
+                alt="WaitFree Clinic"
+                className="h-10 w-auto mr-2"  // space between image and text
+              />
+              
+                <span className="text-2xl font-extrabold">WaitFree<span className="text-blue-400">Clinic</span></span>
+              </div>
+              <p className="text-gray-400 text-sm max-w-xs">
+                Making modern healthcare accessible and convenient by putting time back in your day.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">For Patients</h4>
+              <ul className="space-y-3">
+                <li><a href="/Search" className="text-gray-400 hover:text-white transition-colors">Find Doctors</a></li>
+                <li>
+                  <a href='/patient-login' className="text-gray-400 hover:text-white transition-colors">Book Appointment</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Video Consultation</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">For Doctors</h4>
+              <ul className="space-y-3">
+                <li><a href="/Login" className="text-gray-400 hover:text-white transition-colors">Doctor Login</a></li>
+                <li><a href="/Login" className="text-gray-400 hover:text-white transition-colors">Register Clinic</a></li>
+                <li><a href="/Pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">Company</h4>
+              <ul className="space-y-3">
+                <li><a href="/About-us" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+                <li><a href="Contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                <li><a href="/Privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
+            <p>© 2026 WaitFree-Clinic. All rights reserved. | Built with 💙 for modern healthcare.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

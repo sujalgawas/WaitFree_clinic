@@ -165,31 +165,59 @@ export default function PricingPage({ darkMode, setCurrentPage }) {
           </div>
         </div>
 
-        {/* Patient Benefits Section */}
-        <div className={`rounded-2xl p-8 backdrop-blur-lg border ${darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'}`}>
-          <h2 className="text-2xl font-bold text-center mb-8">For Patients: Seamless Access to Top Doctors</h2>
-          <p className="text-center mb-6 opacity-70">Search for doctors by specialty, location, or rating. Login to doctor pages for instant consultations, telemedicine, and personalized health tracking—all at affordable rates.</p>
-          <div className="flex justify-center">
-            <button
-              onClick={() => setCurrentPage('patient-search')}
-              className="bg-blue-600 text-white px-8 py-3 rounded-xl hover:bg-blue-700 transition-colors font-bold"
-            >
-              Find a Doctor Now
-            </button>
+       
+        </div>
+        
+     {/* Footer */}
+      <footer className="py-16 px-6 bg-gray-900 text-white">
+<div className="max-w-7xl mx-auto">
+           <div className="grid grid-cols-2 md:grid-cols-5 gap-12 mb-12"> {/* Better alignment with 5 columns */}
+         <div className="col-span-2">
+               <div className="flex items-center gap-2 mb-4">
+                                <img
+                src="/Logo.png"
+                alt="WaitFree Clinic"
+                className="h-10 w-auto mr-2"  // space between image and text
+              />
+              
+                <span className="text-2xl font-extrabold">WaitFree<span className="text-blue-400">Clinic</span></span>
+              </div>
+              <p className="text-gray-400 text-sm max-w-xs">
+                Making modern healthcare accessible and convenient by putting time back in your day.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">For Patients</h4>
+              <ul className="space-y-3">
+                <li><a href="/Search" className="text-gray-400 hover:text-white transition-colors">Find Doctors</a></li>
+                <li>
+                  <a href='/patient-login' className="text-gray-400 hover:text-white transition-colors">Book Appointment</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Video Consultation</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">For Doctors</h4>
+              <ul className="space-y-3">
+                <li><a href="/Login" className="text-gray-400 hover:text-white transition-colors">Doctor Login</a></li>
+                <li><a href="/Login" className="text-gray-400 hover:text-white transition-colors">Register Clinic</a></li>
+                <li><a href="/Pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">Company</h4>
+              <ul className="space-y-3">
+                <li><a href="/About-us" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+                <li><a href="Contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                <li><a href="/Privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
+            <p>© 2026 WaitFree-Clinic. All rights reserved. | Built with 💙 for modern healthcare.</p>
           </div>
         </div>
-
-        {/* FAQ or CTA Section */}
-        <div className="text-center mt-12">
-          <p className="text-lg mb-4">Join thousands of doctors revolutionizing healthcare in India. Start your free trial today!</p>
-          <button
-            onClick={() => setCurrentPage('contact')}
-            className="bg-green-600 text-white px-8 py-3 rounded-xl hover:bg-green-700 transition-colors font-bold"
-          >
-            Contact Sales
-          </button>
-        </div>
+      </footer>
       </div>
-    </div>
+    
   );
 }

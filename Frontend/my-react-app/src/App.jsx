@@ -9,7 +9,7 @@ import LocationPopup from './components/LocationPopup';
 // Import Pages
 import Home from './pages/PatientHome';
 import LandingPage from './pages/LandingPage';
-import Login from './components/Login';
+import Login from './components/login';
 import Register from './pages/Register';
 import DoctorLogin from './components/DoctorLogin';
 import PatientLogin from './components/PatientLogin';
@@ -29,7 +29,7 @@ import DoctorProfile from './pages/DoctorProfile';
 import MyAppointments from './pages/MyAppoinments';
 import DoctorSchedule from './pages/DoctorSchedule';
 import BookingTracker from './pages/BookingTracker';
-
+import AboutUs from './pages/About-us';
 import API_KEYS from './assets/API_keys.json';
 
 const getAddressFromCoordinates = async (lat, lng) => {
@@ -233,9 +233,12 @@ function MainLayout() {
         <Route path="/patient-login" element={<PatientLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/doctor-login" element={<DoctorLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/Pricing" element={<Pricing darkMode={darkMode} />} />
-
+        <Route path="/About-us" element={<AboutUs darkMode={darkMode} />} />
         {/* Public Search */}
         <Route path="/search" element={<Search darkMode={darkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} setCurrentPage={setCurrentPage} setSelectedDoctor={setSelectedDoctor} setBookingData={setBookingData} />} />
+       
+       
+        {/* Public About */}
 
         {/* Protected Patient Routes */}
         <Route path="/patient-home" element={

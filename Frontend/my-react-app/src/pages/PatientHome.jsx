@@ -192,6 +192,57 @@ export default function PatientHome({ darkMode, searchQuery, setSearchQuery, set
           </div>
         </div>
       </div>
+      
+     {/* Footer */}
+      <footer className="py-16 px-6 bg-gray-900 text-white">
+<div className="max-w-7xl mx-auto">
+           <div className="grid grid-cols-2 md:grid-cols-5 gap-12 mb-12"> {/* Better alignment with 5 columns */}
+         <div className="col-span-2">
+               <div className="flex items-center gap-2 mb-4">
+                                <img
+                src="/Logo.png"
+                alt="WaitFree Clinic"
+                className="h-10 w-auto mr-2"  // space between image and text
+              />
+              
+                <span className="text-2xl font-extrabold">WaitFree<span className="text-blue-400">Clinic</span></span>
+              </div>
+              <p className="text-gray-400 text-sm max-w-xs">
+                Making modern healthcare accessible and convenient by putting time back in your day.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">For Patients</h4>
+              <ul className="space-y-3">
+                <li><a href="/Search" className="text-gray-400 hover:text-white transition-colors">Find Doctors</a></li>
+                <li>
+                  <a href='/patient-login' className="text-gray-400 hover:text-white transition-colors">Book Appointment</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Video Consultation</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">For Doctors</h4>
+              <ul className="space-y-3">
+                <li><a href="/Login" className="text-gray-400 hover:text-white transition-colors">Doctor Login</a></li>
+                <li><a href="/Login" className="text-gray-400 hover:text-white transition-colors">Register Clinic</a></li>
+                <li><a href="/Pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">Company</h4>
+              <ul className="space-y-3">
+                <li><a href="/About-us" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+                <li><a href="Contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                <li><a href="/Privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
+            <p>© 2026 WaitFree-Clinic. All rights reserved. | Built with 💙 for modern healthcare.</p>
+          </div>
+        </div>
+      </footer>
     </div>
+    
   );
 }

@@ -64,28 +64,7 @@ export default function MainLogin({ darkMode }) {
     <div className={`min-h-screen flex flex-col transition-colors duration-300 ${
       darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-br from-blue-50 to-indigo-100 text-gray-900'
     }`}>
-      {/* Navbar */}
-      <nav className={`flex items-center justify-between px-6 py-4 shadow-sm ${
-        darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white/80 backdrop-blur-md border-b border-gray-200'
-      }`}>
-        <div className="flex items-center">
-          <img src="/Logo.png" alt="WaitFree Clinic Logo" className="w-10 h-10 mr-3" />
-          <h1 className="text-xl font-bold">WaitFree Clinic</h1>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'
-          }`}>
-            About
-          </button>
-          <button className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'
-          }`}>
-            Contact
-          </button>
-        </div>
-      </nav>
-
+  
       {/* Hero Section */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-12 items-center">
