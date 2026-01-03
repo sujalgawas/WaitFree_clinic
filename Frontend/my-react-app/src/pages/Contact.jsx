@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Mail, Phone, MapPin, Clock, Send, MessageSquare, 
+import React, { useState } from 'react';
+import {
+  Mail, Phone, MapPin, Clock, Send, MessageSquare,
   Stethoscope, Users, Heart, CheckCircle, Calendar,
-  Moon, Sun, Globe, Headphones, FileText, Video,
-  AlertCircle, ArrowRight, Sparkles, Shield
+  Headphones, FileText, AlertCircle, ArrowRight, 
+  Sparkles, Shield
 } from 'lucide-react';
 
 const ContactUs = () => {
   const [darkMode, setDarkMode] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formStatus, setFormStatus] = useState(''); // MISSING
+  const [formData, setFormData] = useState({ // MISSING
     name: '',
     email: '',
     phone: '',
@@ -16,24 +17,8 @@ const ContactUs = () => {
     subject: '',
     message: ''
   });
-  const [formStatus, setFormStatus] = useState('');
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setFormStatus('success');
-    setTimeout(() => {
-      setFormStatus('');
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        userType: 'patient',
-        subject: '',
-        message: ''
-      });
-    }, 3000);
-  };
-
+  // MISSING: handleChange function
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -41,6 +26,7 @@ const ContactUs = () => {
     });
   };
 
+  // MISSING: contactInfo data
   const contactInfo = [
     {
       icon: Phone,
@@ -76,6 +62,7 @@ const ContactUs = () => {
     }
   ];
 
+  // MISSING: departments data
   const departments = [
     {
       icon: Stethoscope,
@@ -107,6 +94,7 @@ const ContactUs = () => {
     }
   ];
 
+  // MISSING: faqs data
   const faqs = [
     {
       q: 'How quickly can I get an appointment?',
@@ -126,6 +114,60 @@ const ContactUs = () => {
     }
   ];
 
+  // FIXED: handleSubmit function
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormStatus('sending');
+
+    // Validate required fields
+    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+      setFormStatus('error');
+      alert('Please fill in all required fields');
+      setTimeout(() => setFormStatus(''), 3000);
+      return;
+    }
+
+    try {
+      console.log('Submitting form:', formData);
+
+      const response = await fetch('http://localhost:5000/contact-us', { // FIXED URL
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Response data:', data);
+
+      if (data.success) {
+        setFormStatus('success');
+        setTimeout(() => {
+          setFormStatus('');
+          setFormData({
+            name: '',
+            email: '',
+            phone: '',
+            userType: 'patient',
+            subject: '',
+            message: ''
+          });
+        }, 3000);
+      } else {
+        setFormStatus('error');
+        alert(data.message || 'Failed to send message');
+        setTimeout(() => setFormStatus(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setFormStatus('error');
+      alert('Network error. Please check if the backend is running.');
+      setTimeout(() => setFormStatus(''), 3000);
+    }
+  };
+
   const bg = darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50';
   const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
   const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
@@ -135,13 +177,11 @@ const ContactUs = () => {
 
   return (
     <div className={`min-h-screen ${bg} transition-colors duration-500`}>
-  
-
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
         <div className="absolute inset-0 bg-black opacity-20" />
-        
+
         {/* Animated Particles */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
@@ -156,7 +196,7 @@ const ContactUs = () => {
               We're Here to Help 24/7
             </span>
           </div>
-          
+
           <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white leading-tight">
             Get in Touch with
             <br />
@@ -164,9 +204,9 @@ const ContactUs = () => {
               WaitFree Clinic
             </span>
           </h1>
-          
+
           <p className="text-xl md:text-2xl text-blue-100 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Whether you're a patient needing support or a doctor wanting to join our network, 
+            Whether you're a patient needing support or a doctor wanting to join our network,
             our dedicated team is ready to assist you.
           </p>
 
@@ -193,30 +233,30 @@ const ContactUs = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {contactInfo.map((info, idx) => (
-              <div 
+              <div
                 key={idx}
                 className={`group ${cardBg} border-2 ${borderColor} rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 relative overflow-hidden`}
               >
                 <div className={`absolute inset-0 bg-gradient-to-br ${info.gradient} opacity-0 group-hover:opacity-5 transition-opacity`} />
-                
+
                 <div className={`bg-gradient-to-br ${info.gradient} w-14 h-14 rounded-xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
                   <info.icon className="w-7 h-7 text-white" />
                 </div>
-                
+
                 <h3 className={`text-xl font-bold ${textPrimary} mb-2`}>
                   {info.title}
                 </h3>
-                
+
                 {info.details.map((detail, i) => (
                   <p key={i} className={`${textPrimary} font-semibold mb-1`}>
                     {detail}
                   </p>
                 ))}
-                
+
                 <p className={`text-sm ${textSecondary} mb-4`}>
                   {info.description}
                 </p>
-                
+
                 <button className={`text-sm font-semibold bg-gradient-to-r ${info.gradient} bg-clip-text text-transparent hover:opacity-80 transition-opacity flex items-center gap-1`}>
                   {info.action}
                   <ArrowRight className="w-4 h-4" />
@@ -233,7 +273,7 @@ const ContactUs = () => {
           <div className="grid lg:grid-cols-3 gap-12">
             {/* Contact Form */}
             <div className="lg:col-span-2">
-              <div className={`${cardBg} border-2 ${borderColor} rounded-3xl shadow-2xl p-8 md:p-12`}>
+              <form onSubmit={handleSubmit} className={`${cardBg} border-2 ${borderColor} rounded-3xl shadow-2xl p-8 md:p-12`}>
                 <div className="mb-8">
                   <h2 className={`text-3xl md:text-4xl font-bold ${textPrimary} mb-3`}>
                     Send us a Message
@@ -257,7 +297,7 @@ const ContactUs = () => {
                         <button
                           key={type.value}
                           type="button"
-                          onClick={() => setFormData({...formData, userType: type.value})}
+                          onClick={() => setFormData({ ...formData, userType: type.value })}
                           className={`p-4 rounded-xl border-2 transition-all ${
                             formData.userType === type.value
                               ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
@@ -288,6 +328,7 @@ const ContactUs = () => {
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
+                        required
                         className={`w-full px-4 py-3 rounded-xl border-2 ${borderColor} ${inputBg} ${textPrimary} focus:border-blue-500 focus:outline-none transition-colors`}
                         placeholder="John Doe"
                       />
@@ -301,6 +342,7 @@ const ContactUs = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
+                        required
                         className={`w-full px-4 py-3 rounded-xl border-2 ${borderColor} ${inputBg} ${textPrimary} focus:border-blue-500 focus:outline-none transition-colors`}
                         placeholder="john@example.com"
                       />
@@ -330,6 +372,7 @@ const ContactUs = () => {
                         name="subject"
                         value={formData.subject}
                         onChange={handleChange}
+                        required
                         className={`w-full px-4 py-3 rounded-xl border-2 ${borderColor} ${inputBg} ${textPrimary} focus:border-blue-500 focus:outline-none transition-colors`}
                       >
                         <option value="">Select a subject</option>
@@ -352,6 +395,7 @@ const ContactUs = () => {
                       name="message"
                       value={formData.message}
                       onChange={handleChange}
+                      required
                       rows="6"
                       className={`w-full px-4 py-3 rounded-xl border-2 ${borderColor} ${inputBg} ${textPrimary} focus:border-blue-500 focus:outline-none transition-colors resize-none`}
                       placeholder="Tell us how we can help you..."
@@ -361,15 +405,16 @@ const ContactUs = () => {
                   {/* Submit Button */}
                   <div>
                     <button
-                      onClick={handleSubmit}
-                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                      type="submit"
+                      disabled={formStatus === 'sending'}
+                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Send className="w-5 h-5" />
-                      Send Message
+                      {formStatus === 'sending' ? 'Sending...' : 'Send Message'}
                     </button>
                   </div>
 
-                  {/* Success Message */}
+                  {/* Success/Error Messages */}
                   {formStatus === 'success' && (
                     <div className="bg-green-50 dark:bg-green-900/30 border-2 border-green-500 rounded-xl p-4 flex items-center gap-3">
                       <CheckCircle className="w-6 h-6 text-green-600" />
@@ -383,13 +428,26 @@ const ContactUs = () => {
                       </div>
                     </div>
                   )}
+
+                  {formStatus === 'error' && (
+                    <div className="bg-red-50 dark:bg-red-900/30 border-2 border-red-500 rounded-xl p-4 flex items-center gap-3">
+                      <AlertCircle className="w-6 h-6 text-red-600" />
+                      <div>
+                        <p className="font-semibold text-red-900 dark:text-red-100">
+                          Failed to send message
+                        </p>
+                        <p className="text-sm text-red-700 dark:text-red-300">
+                          Please try again or contact us directly.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              </form>
             </div>
 
-            {/* Sidebar */}
+            {/* Sidebar - Departments */}
             <div className="space-y-6">
-              {/* Departments */}
               <div className={`${cardBg} border-2 ${borderColor} rounded-2xl p-6 shadow-lg`}>
                 <h3 className={`text-xl font-bold ${textPrimary} mb-4 flex items-center gap-2`}>
                   <FileText className="w-5 h-5 text-blue-600" />
@@ -397,10 +455,10 @@ const ContactUs = () => {
                 </h3>
                 <div className="space-y-4">
                   {departments.map((dept, idx) => (
-                    <div key={idx} className={`p-4 rounded-xl border ${borderColor} hover:border-${dept.color}-500 transition-colors`}>
+                    <div key={idx} className={`p-4 rounded-xl border ${borderColor} hover:border-blue-500 transition-colors`}>
                       <div className="flex items-start gap-3">
-                        <div className={`bg-${dept.color}-100 dark:bg-${dept.color}-900/30 p-2 rounded-lg`}>
-                          <dept.icon className={`w-5 h-5 text-${dept.color}-600`} />
+                        <div className={`bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg`}>
+                          <dept.icon className={`w-5 h-5 text-blue-600`} />
                         </div>
                         <div className="flex-1">
                           <h4 className={`font-semibold ${textPrimary} mb-1`}>
@@ -409,7 +467,7 @@ const ContactUs = () => {
                           <p className={`text-xs ${textSecondary} mb-2`}>
                             {dept.description}
                           </p>
-                          <a href={`mailto:${dept.email}`} className={`text-xs text-${dept.color}-600 hover:underline`}>
+                          <a href={`mailto:${dept.email}`} className={`text-xs text-blue-600 hover:underline`}>
                             {dept.email}
                           </a>
                         </div>
@@ -513,7 +571,7 @@ const ContactUs = () => {
                 <p className={`${textSecondary} mb-6`}>
                   We'd love to meet you in person. Drop by our office during business hours.
                 </p>
-                
+
                 <div className="space-y-4 mb-8">
                   <div className="flex items-start gap-4">
                     <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg">
@@ -561,19 +619,18 @@ const ContactUs = () => {
                 </button>
               </div>
 
-          <div className="bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 p-12 flex items-center justify-center">
-  <div className="w-full max-w-xl rounded-xl overflow-hidden shadow-lg">
-    <iframe
-      title="WaitFree Clinic Location"
-      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d24857.366350794415!2d72.84789080421744!3d19.114781254061835!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b61b41dfb131%3A0xa668297563ddac31!2sAndheri%20East%2C%20Mumbai%2C%20Maharashtra!5e1!3m2!1sen!2sin!4v1767448680238!5m2!1sen!2sin"
-      className="w-full h-[300px] border-0"
-      loading="lazy"
-      allowFullScreen
-      referrerPolicy="no-referrer-when-downgrade"
-    ></iframe>
-  </div>
-</div>
-
+              <div className="bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 p-12 flex items-center justify-center">
+                <div className="w-full max-w-xl rounded-xl overflow-hidden shadow-lg">
+                  <iframe
+                    title="WaitFree Clinic Location"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d24857.366350794415!2d72.84789080421744!3d19.114781254061835!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b61b41dfb131%3A0xa668297563ddac31!2sAndheri%20East%2C%20Mumbai%2C%20Maharashtra!5e1!3m2!1sen!2sin!4v1767448680238!5m2!1sen!2sin"
+                    className="w-full h-[300px] border-0"
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                  ></iframe>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -583,7 +640,7 @@ const ContactUs = () => {
       <section className="relative py-20 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600" />
         <div className="absolute inset-0 bg-black opacity-20" />
-        
+
         <div className="relative max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             Ready to Experience WaitFree Healthcare?
@@ -591,7 +648,7 @@ const ContactUs = () => {
           <p className="text-xl text-blue-100 mb-8">
             Join 50,000+ patients who've already eliminated wait times
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-4 rounded-full font-bold text-lg transition-all shadow-xl transform hover:scale-105 flex items-center justify-center gap-2">
               <Calendar className="w-5 h-5" />
