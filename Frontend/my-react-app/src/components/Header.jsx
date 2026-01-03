@@ -117,14 +117,34 @@ export default function Header({
 
             {/* Authentication and User Buttons */}
             {isAuthenticated ? (
+              
               <div className="flex items-center space-x-3 ml-4">
                 {/* User Info Dropdown Placeholder/Button */}
+                {userType === 'patient' && (
+                    <button
+                      onClick={() => navigate('/my-appointments')}
+                      className={`hover:text-blue-600 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                    >
+                      My Appointments
+                    </button>
+                  )}
+
+                  {/* Doctor Schedule: Only for Doctors */}
+                  {userType === 'doctor' && (
+                    <button
+                      onClick={() => navigate('/doctor-schedule')}
+                      className={`hover:text-blue-600 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                    >
+                      My Schedule
+                    </button>
+                  )}
                 <button
                   onClick={() => navigate(userType === 'doctor' ? '/doctor-home' : '/dashboard')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-colors ${
                     darkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
                   }`}
-                >
+                > 
+
                   <User className="w-5 h-5" />
                   <span className="text-sm">
                     {userType === 'doctor' ? 'Dr. Dashboard' : 'My Dashboard'}

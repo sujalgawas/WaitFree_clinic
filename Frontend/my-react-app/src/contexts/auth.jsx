@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
         const response = await axios.post('http://127.0.0.1:5000/verify-token', { 
           token: storedToken 
         });
-
+        console.log(token);
         // 2. If Verified (Backend returns 200 and verified=true)
         if (response.data.verified) {
           setToken(storedToken);
