@@ -28,6 +28,8 @@ import MyAppointments from './pages/MyAppoinments';
 import DoctorSchedule from './pages/DoctorSchedule';
 import BookingTracker from './pages/BookingTracker';
 import AboutUs from './pages/About-us';
+import Contact from './pages/Contact';
+import Privacy from './pages/Privacy';
 import API_KEYS from './assets/API_keys.json';
 
 const getAddressFromCoordinates = async (lat, lng) => {
@@ -226,6 +228,9 @@ function MainLayout() {
         <Route path="/doctor-login" element={<DoctorLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/Pricing" element={<Pricing darkMode={darkMode} />} />
         <Route path="/About-us" element={<AboutUs darkMode={darkMode} />} />
+         <Route path="/Contact" element={<Contact darkMode={darkMode} />} />
+          <Route path="/Privacy" element={<Privacy darkMode={darkMode} />} />
+          
         {/* Public Search */}
 
         <Route path="/search" element={<Search darkMode={darkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} setCurrentPage={setCurrentPage} setSelectedDoctor={setSelectedDoctor} setBookingData={setBookingData} />} />
