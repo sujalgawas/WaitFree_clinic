@@ -561,14 +561,19 @@ const ContactUs = () => {
                 </button>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 p-12 flex items-center justify-center">
-                <div className="text-center">
-                  <Globe className="w-32 h-32 text-blue-600 mx-auto mb-4 opacity-50" />
-                  <p className={`text-lg ${textSecondary}`}>
-                    Interactive Map Coming Soon
-                  </p>
-                </div>
-              </div>
+          <div className="bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 p-12 flex items-center justify-center">
+  <div className="w-full max-w-xl rounded-xl overflow-hidden shadow-lg">
+    <iframe
+      title="WaitFree Clinic Location"
+      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d24857.366350794415!2d72.84789080421744!3d19.114781254061835!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b61b41dfb131%3A0xa668297563ddac31!2sAndheri%20East%2C%20Mumbai%2C%20Maharashtra!5e1!3m2!1sen!2sin!4v1767448680238!5m2!1sen!2sin"
+      className="w-full h-[300px] border-0"
+      loading="lazy"
+      allowFullScreen
+      referrerPolicy="no-referrer-when-downgrade"
+    ></iframe>
+  </div>
+</div>
+
             </div>
           </div>
         </div>
