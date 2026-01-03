@@ -10,6 +10,12 @@ from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
 import json
+import stripe
+from datetime import datetime, timedelta
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 cred = credentials.Certificate("./serviceAccountKey.json")
 #initialize_app(cred)
@@ -23,8 +29,19 @@ bucket = storage.bucket()
 db = firestore.client()
 
 app = Flask(__name__)
-# Allow CORS for all domains
-CORS(app, resources={r"/*": {"origins": "*"}})
+
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",  # If using Vite
+            "http://127.0.0.1:5173"   # If using Vite
+        ],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 
 # --- Helper Function for Name ---
 def get_username_from_email(email):
@@ -38,6 +55,631 @@ def token_to_uid(token):
     except Exception as e:
         print(f"Token verification failed: {e}")
         return None
+
+# Set your secret key from environment variables for security
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+
+# ==================== PRICING PLANS CONFIGURATION ====================
+PRICING_PLANS = {
+    'basic': {
+        'name': 'Basic',
+        'monthly': {
+            'price': 999,
+            'original_price': 1199,
+            'stripe_price_id': os.getenv('STRIPE_BASIC_MONTHLY_PRICE_ID', ''),
+        },
+        'yearly': {
+            'price': 9999,
+            'original_price': 11999,
+            'stripe_price_id': os.getenv('STRIPE_BASIC_YEARLY_PRICE_ID', ''),
+        },
+        'features': [
+            'Account setup on WaitFree Clinic Platform',
+            'Basic patient management',
+            'AI-assisted appointment scheduling',
+            'Patient search for your profile',
+            'Email support for doctors',
+            'Basic analytics dashboard'
+        ]
+    },
+    'premium': {
+        'name': 'Premium',
+        'monthly': {
+            'price': 1999,
+            'original_price': 2399,
+            'stripe_price_id': os.getenv('STRIPE_PREMIUM_MONTHLY_PRICE_ID', ''),
+        },
+        'yearly': {
+            'price': 19999,
+            'original_price': 23999,
+            'stripe_price_id': os.getenv('STRIPE_PREMIUM_YEARLY_PRICE_ID', ''),
+        },
+        'features': [
+            'Everything in Basic',
+            'Advanced AI diagnostics assistance',
+            'Real-time patient location tracking',
+            'Waiting time estimation & queue management',
+            'Integrated telemedicine tools',
+            'Priority patient notifications',
+            'Customizable doctor profile for patient search',
+            '24/7 chat support for doctors',
+            'Enhanced analytics with patient insights'
+        ]
+    },
+    'pro': {
+        'name': 'Pro',
+        'monthly': {
+            'price': 2999,
+            'original_price': 3599,
+            'stripe_price_id': os.getenv('STRIPE_PRO_MONTHLY_PRICE_ID', ''),
+        },
+        'yearly': {
+            'price': 29999,
+            'original_price': 35999,
+            'stripe_price_id': os.getenv('STRIPE_PRO_YEARLY_PRICE_ID', ''),
+        },
+        'features': [
+            'Everything in Premium',
+            'Full AI-powered clinic automation',
+            'Predictive health analytics for patients',
+            'Zero-waiting-time virtual queues',
+            'Multi-location clinic management',
+            'Dedicated health coach integration',
+            'Exclusive research access & data insights',
+            'Family plan management for patients',
+            'Emergency response protocols',
+            'White-label customization'
+        ]
+    }
+}
+
+# ==================== GET PRICING PLANS ====================
+@app.route('/get-pricing-plans', methods=['GET'])
+def get_pricing_plans():
+    """Return all available pricing plans with their details"""
+    try:
+        return jsonify({
+            "success": True,
+            "plans": PRICING_PLANS
+        }), 200
+    except Exception as e:
+        print(f"Error fetching pricing plans: {e}")
+        return jsonify({"error": "Failed to fetch pricing plans"}), 500
+
+# ==================== CREATE STRIPE CHECKOUT SESSION ====================
+@app.route('/create-checkout-session', methods=['POST', 'OPTIONS'])
+def create_checkout_session():
+    # Handle the browser's preflight check
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        plan_type = data.get('plan_type')
+        billing_cycle = data.get('billing_cycle')
+        
+        print(f"📝 Received request - Plan: {plan_type}, Cycle: {billing_cycle}")
+        
+        # Verify doctor authentication
+        doctor_uid = token_to_uid(token)
+        if not doctor_uid:
+            print("❌ Unauthorized - Invalid token")
+            return jsonify({"success": False, "message": "Unauthorized"}), 401
+        
+        print(f"✅ Doctor authenticated: {doctor_uid}")
+        
+        # Validate plan and billing cycle
+        if plan_type not in PRICING_PLANS:
+            print(f"❌ Invalid plan type: {plan_type}")
+            return jsonify({"success": False, "message": "Invalid plan type"}), 400
+        
+        if billing_cycle not in ['monthly', 'yearly']:
+            print(f"❌ Invalid billing cycle: {billing_cycle}")
+            return jsonify({"success": False, "message": "Invalid billing cycle"}), 400
+        
+        # Get plan details
+        plan = PRICING_PLANS[plan_type]
+        price_details = plan[billing_cycle]
+        stripe_price_id = price_details['stripe_price_id']
+        
+        # Check if Stripe is configured
+        if not stripe.api_key or stripe.api_key == '':
+            print("❌ Stripe API key not configured")
+            return jsonify({
+                "success": False, 
+                "message": "Payment system not configured. Please contact support."
+            }), 500
+        
+        if not stripe_price_id or stripe_price_id == '':
+            print(f"❌ Stripe price ID not configured for {plan_type} {billing_cycle}")
+            return jsonify({
+                "success": False,
+                "message": f"Pricing not configured for {plan_type} plan. Please contact support."
+            }), 500
+        
+        print(f"💳 Using Stripe Price ID: {stripe_price_id}")
+        
+        # Get doctor details from both users and doctors collections
+        doctor_email = None
+        doctor_name = None
+        
+        # Try to get email from users collection first
+        try:
+            user_doc = db.collection('users').document(doctor_uid).get()
+            if user_doc.exists:
+                user_data = user_doc.to_dict()
+                doctor_email = user_data.get('email')
+                print(f"📧 Email from users collection: {doctor_email}")
+        except Exception as e:
+            print(f"⚠️ Error fetching from users collection: {e}")
+        
+        # Get doctor details from doctors collection
+        try:
+            doctor_doc = db.collection('doctors').document(doctor_uid).get()
+            if doctor_doc.exists:
+                doctor_data = doctor_doc.to_dict()
+                doctor_name = doctor_data.get('full_name', 'Doctor')
+                # If email not found in users, try doctors collection
+                if not doctor_email:
+                    doctor_email = doctor_data.get('email')
+                print(f"👤 Doctor name: {doctor_name}")
+        except Exception as e:
+            print(f"⚠️ Error fetching from doctors collection: {e}")
+            doctor_data = {}
+        
+        # Fallback email if still not found
+        if not doctor_email:
+            doctor_email = f"doctor_{doctor_uid}@waitfreeclinic.com"
+            print(f"⚠️ Using fallback email: {doctor_email}")
+        
+        # Create or retrieve Stripe customer
+        customer_id = None
+        try:
+            # Check if doctor already has a Stripe customer ID
+            if doctor_doc.exists:
+                customer_id = doctor_data.get('stripe_customer_id')
+                print(f"🔍 Existing customer ID: {customer_id}")
+            
+            # Create new customer if doesn't exist
+            if not customer_id:
+                print("🆕 Creating new Stripe customer...")
+                customer = stripe.Customer.create(
+                    email=doctor_email,
+                    name=doctor_name,
+                    metadata={
+                        'doctor_uid': doctor_uid,
+                        'user_type': 'doctor'
+                    }
+                )
+                customer_id = customer.id
+                print(f"✅ Created customer: {customer_id}")
+                
+                # Save customer ID to doctor profile
+                db.collection('doctors').document(doctor_uid).set({
+                    'stripe_customer_id': customer_id,
+                    'email': doctor_email  # Save email if missing
+                }, merge=True)
+        
+        except Exception as customer_error:
+            print(f"❌ Error creating/retrieving customer: {customer_error}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({
+                "success": False,
+                "message": "Failed to process customer information"
+            }), 500
+        
+        # Create Checkout Session
+        try:
+            print("🛒 Creating checkout session...")
+            
+            frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+            
+            checkout_session = stripe.checkout.Session.create(
+                customer=customer_id,
+                payment_method_types=['card'],
+                line_items=[
+                    {
+                        'price': stripe_price_id,
+                        'quantity': 1,
+                    },
+                ],
+                mode='subscription',
+                success_url=f"{frontend_url}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=f"{frontend_url}/pricing?canceled=true",
+                metadata={
+                    'doctor_uid': doctor_uid,
+                    'plan_type': plan_type,
+                    'billing_cycle': billing_cycle
+                },
+                subscription_data={
+                    'metadata': {
+                        'doctor_uid': doctor_uid,
+                        'plan_type': plan_type,
+                        'billing_cycle': billing_cycle
+                    },
+                    'trial_period_days': 14
+                }
+            )
+            
+            print(f"✅ Checkout session created: {checkout_session.id}")
+            print(f"🔗 Checkout URL: {checkout_session.url}")
+            
+            return jsonify({
+                "success": True,
+                "checkout_url": checkout_session.url,
+                "session_id": checkout_session.id
+            }), 200
+        
+        except stripe.error.StripeError as stripe_error:
+            print(f"❌ Stripe error: {stripe_error}")
+            return jsonify({
+                "success": False,
+                "message": f"Payment system error: {str(stripe_error)}"
+            }), 500
+        except Exception as checkout_error:
+            print(f"❌ Error creating checkout session: {checkout_error}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({
+                "success": False,
+                "message": "Failed to create checkout session"
+            }), 500
+    
+    except Exception as e:
+        print(f"❌ Error in create_checkout_session: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": "An unexpected error occurred"
+        }), 500
+
+# ==================== STRIPE WEBHOOK ====================
+@app.route('/stripe-webhook', methods=['POST'])
+def stripe_webhook():
+    """Handle Stripe webhook events for subscription management"""
+    payload = request.get_data(as_text=True)
+    sig_header = request.headers.get('Stripe-Signature')
+    webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
+    
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, webhook_secret
+        )
+    except ValueError as e:
+        print(f"Invalid payload: {e}")
+        return jsonify({"error": "Invalid payload"}), 400
+    except stripe.error.SignatureVerificationError as e:
+        print(f"Invalid signature: {e}")
+        return jsonify({"error": "Invalid signature"}), 400
+    
+    # Handle different event types
+    event_type = event['type']
+    print(f"📨 Webhook received: {event_type}")
+    
+    try:
+        if event_type == 'checkout.session.completed':
+            session = event['data']['object']
+            handle_checkout_completed(session)
+        
+        elif event_type == 'customer.subscription.created':
+            subscription = event['data']['object']
+            handle_subscription_created(subscription)
+        
+        elif event_type == 'customer.subscription.updated':
+            subscription = event['data']['object']
+            handle_subscription_updated(subscription)
+        
+        elif event_type == 'customer.subscription.deleted':
+            subscription = event['data']['object']
+            handle_subscription_deleted(subscription)
+        
+        elif event_type == 'invoice.payment_succeeded':
+            invoice = event['data']['object']
+            handle_payment_succeeded(invoice)
+        
+        elif event_type == 'invoice.payment_failed':
+            invoice = event['data']['object']
+            handle_payment_failed(invoice)
+        
+        return jsonify({"success": True}), 200
+    
+    except Exception as e:
+        print(f"Webhook handling error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Webhook processing failed"}), 500
+
+
+# ==================== WEBHOOK HANDLERS ====================
+def handle_checkout_completed(session):
+    """Handle successful checkout completion"""
+    doctor_uid = session['metadata'].get('doctor_uid')
+    plan_type = session['metadata'].get('plan_type')
+    billing_cycle = session['metadata'].get('billing_cycle')
+    subscription_id = session.get('subscription')
+    
+    if doctor_uid:
+        # Update doctor's subscription info
+        subscription_data = {
+            'subscription': {
+                'stripe_subscription_id': subscription_id,
+                'plan_type': plan_type,
+                'billing_cycle': billing_cycle,
+                'status': 'trialing',  # Initially on trial
+                'trial_end': datetime.now() + timedelta(days=14),
+                'created_at': datetime.now().isoformat(),
+                'last_updated': datetime.now().isoformat()
+            },
+            'is_subscribed': True
+        }
+        
+        db.collection('doctors').document(doctor_uid).set(subscription_data, merge=True)
+        print(f"✅ Subscription created for doctor {doctor_uid}")
+
+
+def handle_subscription_created(subscription):
+    """Handle subscription creation"""
+    doctor_uid = subscription['metadata'].get('doctor_uid')
+    
+    if doctor_uid:
+        subscription_data = {
+            'subscription': {
+                'stripe_subscription_id': subscription['id'],
+                'status': subscription['status'],
+                'current_period_start': datetime.fromtimestamp(subscription['current_period_start']).isoformat(),
+                'current_period_end': datetime.fromtimestamp(subscription['current_period_end']).isoformat(),
+                'last_updated': datetime.now().isoformat()
+            }
+        }
+        
+        db.collection('doctors').document(doctor_uid).set(subscription_data, merge=True)
+        print(f"✅ Subscription updated for doctor {doctor_uid}")
+
+
+def handle_subscription_updated(subscription):
+    """Handle subscription updates (upgrades, downgrades, cancellations)"""
+    customer_id = subscription.get('customer')
+    
+    # Find doctor by customer_id
+    doctors_ref = db.collection('doctors')
+    query = doctors_ref.where('stripe_customer_id', '==', customer_id).limit(1)
+    results = query.stream()
+    
+    for doc in results:
+        doctor_uid = doc.id
+        subscription_data = {
+            'subscription': {
+                'status': subscription['status'],
+                'current_period_start': datetime.fromtimestamp(subscription['current_period_start']).isoformat(),
+                'current_period_end': datetime.fromtimestamp(subscription['current_period_end']).isoformat(),
+                'cancel_at_period_end': subscription.get('cancel_at_period_end', False),
+                'last_updated': datetime.now().isoformat()
+            }
+        }
+        
+        db.collection('doctors').document(doctor_uid).set(subscription_data, merge=True)
+        print(f"✅ Subscription updated for doctor {doctor_uid}")
+        break
+
+
+def handle_subscription_deleted(subscription):
+    """Handle subscription cancellation"""
+    customer_id = subscription.get('customer')
+    
+    # Find doctor by customer_id
+    doctors_ref = db.collection('doctors')
+    query = doctors_ref.where('stripe_customer_id', '==', customer_id).limit(1)
+    results = query.stream()
+    
+    for doc in results:
+        doctor_uid = doc.id
+        subscription_data = {
+            'subscription': {
+                'status': 'canceled',
+                'canceled_at': datetime.now().isoformat(),
+                'last_updated': datetime.now().isoformat()
+            },
+            'is_subscribed': False
+        }
+        
+        db.collection('doctors').document(doctor_uid).set(subscription_data, merge=True)
+        print(f"✅ Subscription canceled for doctor {doctor_uid}")
+        break
+
+
+def handle_payment_succeeded(invoice):
+    """Handle successful payment"""
+    customer_id = invoice.get('customer')
+    subscription_id = invoice.get('subscription')
+    
+    # Find doctor by customer_id
+    doctors_ref = db.collection('doctors')
+    query = doctors_ref.where('stripe_customer_id', '==', customer_id).limit(1)
+    results = query.stream()
+    
+    for doc in results:
+        doctor_uid = doc.id
+        
+        # Log payment in payment_history subcollection
+        payment_data = {
+            'invoice_id': invoice['id'],
+            'subscription_id': subscription_id,
+            'amount_paid': invoice['amount_paid'],
+            'currency': invoice['currency'],
+            'status': 'paid',
+            'paid_at': datetime.fromtimestamp(invoice.get('status_transitions', {}).get('paid_at', 0)).isoformat() if invoice.get('status_transitions', {}).get('paid_at') else datetime.now().isoformat(),
+            'invoice_pdf': invoice.get('invoice_pdf'),
+            'created_at': datetime.now().isoformat()
+        }
+        
+        db.collection('doctors').document(doctor_uid).collection('payment_history').add(payment_data)
+        print(f"✅ Payment recorded for doctor {doctor_uid}")
+        break
+
+
+def handle_payment_failed(invoice):
+    """Handle failed payment"""
+    customer_id = invoice.get('customer')
+    
+    # Find doctor by customer_id
+    doctors_ref = db.collection('doctors')
+    query = doctors_ref.where('stripe_customer_id', '==', customer_id).limit(1)
+    results = query.stream()
+    
+    for doc in results:
+        doctor_uid = doc.id
+        
+        # Update subscription status
+        subscription_data = {
+            'subscription': {
+                'payment_status': 'failed',
+                'last_payment_error': invoice.get('last_payment_error', {}).get('message', 'Payment failed'),
+                'last_updated': datetime.now().isoformat()
+            }
+        }
+        
+        db.collection('doctors').document(doctor_uid).set(subscription_data, merge=True)
+        
+        # Log failed payment
+        payment_data = {
+            'invoice_id': invoice['id'],
+            'status': 'failed',
+            'error_message': invoice.get('last_payment_error', {}).get('message', 'Payment failed'),
+            'attempted_at': datetime.now().isoformat()
+        }
+        
+        db.collection('doctors').document(doctor_uid).collection('payment_history').add(payment_data)
+        print(f"❌ Payment failed for doctor {doctor_uid}")
+        break
+
+
+# ==================== GET SUBSCRIPTION STATUS ====================
+@app.route('/get-subscription-status', methods=['POST'])
+def get_subscription_status():
+    """
+    Get current subscription status for a doctor
+    """
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        
+        # Verify doctor
+        doctor_uid = token_to_uid(token)
+        if not doctor_uid:
+            return jsonify({"message": "Unauthorized"}), 401
+        
+        # Get subscription details
+        doctor_doc = db.collection('doctors').document(doctor_uid).get()
+        
+        if doctor_doc.exists:
+            doctor_data = doctor_doc.to_dict()
+            subscription = doctor_data.get('subscription', {})
+            
+            return jsonify({
+                "success": True,
+                "subscription": subscription,
+                "is_subscribed": doctor_data.get('is_subscribed', False)
+            }), 200
+        else:
+            return jsonify({
+                "success": True,
+                "subscription": None,
+                "is_subscribed": False
+            }), 200
+    
+    except Exception as e:
+        print(f"Error fetching subscription status: {e}")
+        return jsonify({"error": "Failed to fetch subscription status"}), 500
+
+
+# ==================== CANCEL SUBSCRIPTION ====================
+@app.route('/cancel-subscription', methods=['POST'])
+def cancel_subscription():
+    """
+    Cancel a doctor's subscription
+    """
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        cancel_immediately = data.get('cancel_immediately', False)
+        
+        # Verify doctor
+        doctor_uid = token_to_uid(token)
+        if not doctor_uid:
+            return jsonify({"message": "Unauthorized"}), 401
+        
+        # Get doctor's subscription
+        doctor_doc = db.collection('doctors').document(doctor_uid).get()
+        
+        if not doctor_doc.exists:
+            return jsonify({"message": "Doctor not found"}), 404
+        
+        doctor_data = doctor_doc.to_dict()
+        subscription_id = doctor_data.get('subscription', {}).get('stripe_subscription_id')
+        
+        if not subscription_id:
+            return jsonify({"message": "No active subscription found"}), 404
+        
+        # Cancel in Stripe
+        try:
+            if cancel_immediately:
+                stripe.Subscription.delete(subscription_id)
+            else:
+                stripe.Subscription.modify(
+                    subscription_id,
+                    cancel_at_period_end=True
+                )
+            
+            return jsonify({
+                "success": True,
+                "message": "Subscription cancelled successfully"
+            }), 200
+        
+        except Exception as stripe_error:
+            print(f"Stripe cancellation error: {stripe_error}")
+            return jsonify({"message": "Failed to cancel subscription"}), 500
+    
+    except Exception as e:
+        print(f"Error cancelling subscription: {e}")
+        return jsonify({"error": "Failed to cancel subscription"}), 500
+
+
+# ==================== GET PAYMENT HISTORY ====================
+@app.route('/get-payment-history', methods=['POST'])
+def get_payment_history():
+    """
+    Get payment history for a doctor
+    """
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        
+        # Verify doctor
+        doctor_uid = token_to_uid(token)
+        if not doctor_uid:
+            return jsonify({"message": "Unauthorized"}), 401
+        
+        # Get payment history
+        payments_ref = db.collection('doctors').document(doctor_uid).collection('payment_history')
+        query = payments_ref.order_by('created_at', direction=firestore.Query.DESCENDING)
+        results = query.stream()
+        
+        payment_history = []
+        for doc in results:
+            payment = doc.to_dict()
+            payment['id'] = doc.id
+            payment_history.append(payment)
+        
+        return jsonify({
+            "success": True,
+            "payment_history": payment_history
+        }), 200
+    
+    except Exception as e:
+        print(f"Error fetching payment history: {e}")
+        return jsonify({"error": "Failed to fetch payment history"}), 500
 
 @app.route('/check-profile', methods=['POST'])
 def check_profile():

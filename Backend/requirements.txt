@@ -4,3 +4,5 @@ firebase-admin
 firebase
 requests
 google-genai
+stripe
+dotenv
