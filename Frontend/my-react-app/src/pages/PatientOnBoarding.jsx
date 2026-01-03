@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import axios from 'axios'; // Ensure axios is installed
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { User, Heart, Phone, Upload, CheckCircle } from 'lucide-react';
+import { User, Heart, Phone, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function PatientOnboarding({ darkMode = false }) {
   const navigate = useNavigate();
+  
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [errors, setErrors] = useState({});
 
+  // Form State
   const [formData, setFormData] = useState({
     full_name: '',
     date_of_birth: '',
@@ -17,86 +20,139 @@ export default function PatientOnboarding({ darkMode = false }) {
     blood_group: '',
     height: '',
     weight: '',
+    
     allergies_input: '',
     chronic_conditions_input: '',
+    
     emergency_name: '',
     emergency_phone: '',
     emergency_relation: ''
   });
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: '' });
+    }
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors({ ...errors, profile_image: 'File size must be less than 5MB' });
+        return;
+      }
       setProfileImage(file);
       setPreviewUrl(URL.createObjectURL(file));
+      setErrors({ ...errors, profile_image: '' });
     }
   };
 
-  const handleSubmit = async () => {
-    // If not on the last step, just increment the step
-    if (step < 3) {
+  // Validation functions
+  const validateStep1 = () => {
+    const newErrors = {};
+    if (!formData.full_name.trim()) newErrors.full_name = 'Full name is required';
+    if (!formData.date_of_birth) newErrors.date_of_birth = 'Date of birth is required';
+    if (!formData.gender) newErrors.gender = 'Gender is required';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateStep2 = () => {
+    // Medical history is optional, so always valid
+    return true;
+  };
+
+  const validateStep3 = () => {
+    const newErrors = {};
+    if (!formData.emergency_name.trim()) newErrors.emergency_name = 'Emergency contact name is required';
+    if (!formData.emergency_phone.trim()) newErrors.emergency_phone = 'Emergency phone is required';
+    if (!formData.emergency_relation.trim()) newErrors.emergency_relation = 'Relationship is required';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    let isValid = false;
+    
+    if (step === 1) {
+      isValid = validateStep1();
+    } else if (step === 2) {
+      isValid = validateStep2();
+    }
+    
+    if (isValid && step < 3) {
       setStep(step + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // BACKEND SUBMISSION
+  const handleSubmit = async () => {
+    if (step < 3) {
+      handleNext();
       return;
     }
+
+    if (!validateStep3()) return;
 
     setLoading(true);
 
     try {
       const token = localStorage.getItem('token');
-      const submissionData = new FormData();
-
-      // 1. Add Token & Profile Image
-      submissionData.append('token', token);
-      if (profileImage) {
-        submissionData.append('profile_image', profileImage); // Matches backend key
+      if (!token) {
+        alert("Session expired. Please login again.");
+        navigate('/login');
+        return;
       }
 
-      // 2. Add Basic Info
-      submissionData.append('full_name', formData.full_name);
-      submissionData.append('date_of_birth', formData.date_of_birth);
-      submissionData.append('gender', formData.gender);
-      submissionData.append('blood_group', formData.blood_group);
-      submissionData.append('height', formData.height);
-      submissionData.append('weight', formData.weight);
+      const submissionData = new FormData();
 
-      // 3. Convert Comma-Separated Strings to JSON Arrays (Crucial for your backend)
-      const allergiesArr = formData.allergies_input
-        ? formData.allergies_input.split(',').map(s => s.trim()).filter(Boolean)
-        : [];
-      const chronicArr = formData.chronic_conditions_input
-        ? formData.chronic_conditions_input.split(',').map(s => s.trim()).filter(Boolean)
-        : [];
+      // Append profile image if exists
+      if (profileImage) {
+        submissionData.append('profile_image', profileImage);
+      }
 
-      submissionData.append('allergies', JSON.stringify(allergiesArr));
-      submissionData.append('chronic_conditions', JSON.stringify(chronicArr));
+      // Append token
+      submissionData.append('token', token);
 
-      // 4. Add Emergency Contact
-      submissionData.append('emergency_name', formData.emergency_name);
-      submissionData.append('emergency_phone', formData.emergency_phone);
-      submissionData.append('emergency_relation', formData.emergency_relation);
+      // Append all form fields
+      Object.keys(formData).forEach(key => {
+        submissionData.append(key, formData[key]);
+      });
 
-      // 5. POST to Backend
       const response = await axios.post('http://127.0.0.1:5000/patient-form', submissionData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       if (response.status === 200) {
-        alert("✅ Profile Setup Complete!");
-        navigate('/patient-dashboard'); 
+        alert("✅ Profile Setup Complete! Welcome to WaitFree Clinic.");
+        navigate('/patient-dashboard');
       }
 
     } catch (error) {
       console.error("Submission Error:", error.response?.data || error.message);
-      alert(error.response?.data?.message || "Failed to save profile. Please check if backend is running.");
+      const errorMsg = error.response?.data?.message || "Failed to save profile. Please try again.";
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
   };
+
+  const ErrorMessage = ({ error }) => (
+    error ? (
+      <div className="flex items-center gap-1 mt-1 text-red-600 text-xs">
+        <AlertCircle className="w-3 h-3" />
+        <span>{error}</span>
+      </div>
+    ) : null
+  );
+
   // --- STEPS UI ---
 
   const renderStep1 = () => (
@@ -147,8 +203,14 @@ export default function PatientOnboarding({ darkMode = false }) {
             <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
           </label>
           <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Supported formats: JPG, PNG (Max 5MB)
+            {profileImage ? (
+              <span className="flex items-center gap-2">
+                <CheckCircle className="w-3 h-3 text-green-600" />
+                {profileImage.name}
+              </span>
+            ) : "Supported formats: JPG, PNG (Max 5MB)"}
           </p>
+          <ErrorMessage error={errors.profile_image} />
         </div>
       </div>
 
@@ -166,10 +228,11 @@ export default function PatientOnboarding({ darkMode = false }) {
             className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
               darkMode 
                 ? 'border-gray-600 bg-gray-800 text-white' 
-                : 'border-gray-300 bg-white'
+                : errors.full_name ? 'border-red-500' : 'border-gray-300 bg-white'
             }`}
             placeholder="John Doe" 
           />
+          <ErrorMessage error={errors.full_name} />
         </div>
         <div>
           <label className={`block text-sm font-semibold mb-2 ${
@@ -185,9 +248,10 @@ export default function PatientOnboarding({ darkMode = false }) {
             className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
               darkMode 
                 ? 'border-gray-600 bg-gray-800 text-white' 
-                : 'border-gray-300 bg-white'
+                : errors.date_of_birth ? 'border-red-500' : 'border-gray-300 bg-white'
             }`}
           />
+          <ErrorMessage error={errors.date_of_birth} />
         </div>
         <div>
           <label className={`block text-sm font-semibold mb-2 ${
@@ -202,7 +266,7 @@ export default function PatientOnboarding({ darkMode = false }) {
             className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all appearance-none ${
               darkMode 
                 ? 'border-gray-600 bg-gray-800 text-white' 
-                : 'border-gray-300 bg-white'
+                : errors.gender ? 'border-red-500' : 'border-gray-300 bg-white'
             }`}
           >
             <option value="">Select...</option>
@@ -210,6 +274,7 @@ export default function PatientOnboarding({ darkMode = false }) {
             <option value="Female">Female</option>
             <option value="Other">Other</option>
           </select>
+          <ErrorMessage error={errors.gender} />
         </div>
         <div>
           <label className={`block text-sm font-semibold mb-2 ${
@@ -390,10 +455,11 @@ export default function PatientOnboarding({ darkMode = false }) {
           className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
             darkMode 
               ? 'border-gray-600 bg-gray-800 text-white' 
-              : 'border-gray-300 bg-white'
+              : errors.emergency_name ? 'border-red-500' : 'border-gray-300 bg-white'
           }`}
           placeholder="Jane Doe"
         />
+        <ErrorMessage error={errors.emergency_name} />
       </div>
 
       <div>
@@ -409,10 +475,11 @@ export default function PatientOnboarding({ darkMode = false }) {
           className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
             darkMode 
               ? 'border-gray-600 bg-gray-800 text-white' 
-              : 'border-gray-300 bg-white'
+              : errors.emergency_relation ? 'border-red-500' : 'border-gray-300 bg-white'
           }`}
           placeholder="e.g. Mother, Spouse, Sibling" 
         />
+        <ErrorMessage error={errors.emergency_relation} />
       </div>
 
       <div>
@@ -429,10 +496,11 @@ export default function PatientOnboarding({ darkMode = false }) {
           className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
             darkMode 
               ? 'border-gray-600 bg-gray-800 text-white' 
-              : 'border-gray-300 bg-white'
+              : errors.emergency_phone ? 'border-red-500' : 'border-gray-300 bg-white'
           }`}
           placeholder="+91 98765 43210"
         />
+        <ErrorMessage error={errors.emergency_phone} />
       </div>
     </div>
   );
@@ -443,7 +511,10 @@ export default function PatientOnboarding({ darkMode = false }) {
         ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
         : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100'
     }`}>
+
       <div className="max-w-8xl mx-auto">
+
+      <div className="w-full mx-auto">
         <div className={`rounded-3xl shadow-2xl overflow-hidden ${
           darkMode ? 'bg-gray-800' : 'bg-white'
         }`}>
@@ -465,27 +536,33 @@ export default function PatientOnboarding({ darkMode = false }) {
           {/* Progress Indicator */}
           <div className="px-8 pt-8">
             <div className="relative flex items-center mb-6">
-              <div className={`absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full ${
-                darkMode ? 'bg-gray-700' : 'bg-gray-200'
-              }`} />
-
+              <div
+                className={`absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full ${
+                  darkMode ? 'bg-gray-700' : 'bg-gray-200'
+                }`}
+              />
               <div
                 className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
                 style={{ width: `${(step - 1) * 50}%` }}
               />
-
               {[1, 2, 3].map((num) => (
                 <div
                   key={num}
                   className={`relative z-10 ${
-                    num === 1 ? '' : num === 2 ? 'absolute left-1/2 -translate-x-1/2' : 'ml-auto'
+                    num === 1
+                      ? ''
+                      : num === 2
+                      ? 'absolute left-[46%] -translate-x-1/2'
+                      : 'ml-auto'
                   }`}
                 >
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
                       step >= num
                         ? 'bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg'
-                        : darkMode ? 'bg-gray-700 text-gray-500' : 'bg-gray-200 text-gray-400'
+                        : darkMode
+                          ? 'bg-gray-700 text-gray-500'
+                          : 'bg-gray-200 text-gray-400'
                     }`}
                   >
                     {step > num ? <CheckCircle className="w-5 h-5" /> : num}
@@ -493,8 +570,8 @@ export default function PatientOnboarding({ darkMode = false }) {
                 </div>
               ))}
             </div>
-
-            <div className={`flex justify-between text-xs font-medium ${
+            <div
+              className={`flex justify-between text-xs font-medium ${
                 darkMode ? 'text-gray-400' : 'text-gray-500'
               }`}
             >
@@ -536,7 +613,7 @@ export default function PatientOnboarding({ darkMode = false }) {
               {step < 3 ? (
                 <button 
                   type="button" 
-                  onClick={handleSubmit}
+                  onClick={handleNext}
                   className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all font-bold flex items-center gap-2"
                 >
                   Next Step <span>→</span>
@@ -565,7 +642,7 @@ export default function PatientOnboarding({ darkMode = false }) {
           </div>
         </div>
       </div>
-      
+      </div>
      {/* Footer */}
       <footer className="py-16 px-6 bg-gray-900 text-white">
 <div className="max-w-7xl mx-auto">

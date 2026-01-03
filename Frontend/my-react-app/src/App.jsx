@@ -21,7 +21,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import DoctorOnboarding from './pages/DoctorOnBoarding';
 import PatientOnboarding from './pages/PatientOnBoarding';
 import Pricing from './pages/Pricing';
-// Import NEW components
 import AuthRequired from './pages/AuthRequired';
 import ProtectedRoute from './components/ProtectedRoute';
 import DoctorHome from './pages/DoctorHome';
@@ -109,19 +108,16 @@ function MainLayout() {
     }
   }, [isLoggedIn, userType, navigate]);
 
-  // Shim for old components
   const setCurrentPage = (page) => {
     if (page === 'home') navigate('/');
     else navigate(`/${page}`);
   };
 
-  // Toggle dark mode
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [darkMode]);
 
-  // --- UPDATED LOCATION LOGIC ---
   useEffect(() => {
     const savedLocation = localStorage.getItem('userLocation');
 
@@ -130,7 +126,6 @@ function MainLayout() {
       setUserLocation(parsedLoc);
       if (!searchQuery) setSearchQuery(parsedLoc.city);
     } else {
-      // Trigger popup on every refresh/load if savedLocation is missing
       const t = setTimeout(() => setShowLocationPopup(true), 1500);
       return () => clearTimeout(t);
     }
@@ -224,10 +219,8 @@ function MainLayout() {
       )}
 
       <Routes>
-        {/* Public Landing Page */}
+        {/* Public Routes */}
         <Route path="/" element={<LandingPage darkMode={darkMode} />} />
-
-        {/* Authentication Routes */}
         <Route path="/login" element={<Login darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/register" element={<Register darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/patient-login" element={<PatientLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
@@ -235,75 +228,16 @@ function MainLayout() {
         <Route path="/Pricing" element={<Pricing darkMode={darkMode} />} />
         <Route path="/About-us" element={<AboutUs darkMode={darkMode} />} />
         {/* Public Search */}
+
         <Route path="/search" element={<Search darkMode={darkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} setCurrentPage={setCurrentPage} setSelectedDoctor={setSelectedDoctor} setBookingData={setBookingData} />} />
        
        
         {/* Public About */}
 
-        {/* Protected Patient Routes */}
-        <Route path="/patient-home" element={
-          <ProtectedRoute requiredUserType="patient">
-            <Home darkMode={darkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} setCurrentPage={setCurrentPage} setSelectedDoctor={setSelectedDoctor} setBookingData={setBookingData} />
-          </ProtectedRoute>
-        } />
-
-        <Route
-          path="/my-appointments"
-          element={
-            <ProtectedRoute requiredUserType="patient">
-              <MyAppointments darkMode={darkMode} />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route path="/BookingTracker" element={
-          <ProtectedRoute requiredUserType="patient">
-            <BookingTracker darkMode={darkMode} />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/doctor-schedule" element={
-          <ProtectedRoute requiredUserType="doctor">
-            <DoctorSchedule darkMode={darkMode} />
-          </ProtectedRoute>
-        } />
-
-
-        <Route path="/doctor/:name" element={
-          <DoctorProfile
-            darkMode={darkMode}
-            setBookingData={setBookingData}
-          />
-        } />
-
+        {/* Onboarding Forms - Only accessible if profile NOT completed */}
         <Route path="/patient-form" element={
           <ProtectedRoute requiredUserType="patient">
             <PatientOnboarding darkMode={darkMode} />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <Profile darkMode={darkMode} selectedDoctor={selectedDoctor} bookingData={bookingData} setBookingData={setBookingData} handleBookAppointment={handleBookAppointment} />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/confirmation" element={
-          <ProtectedRoute>
-            <Confirmation darkMode={darkMode} appointments={appointments} setCurrentPage={setCurrentPage} />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/dashboard" element={
-          <ProtectedRoute requiredUserType="patient">
-            <Dashboard darkMode={darkMode} isLoggedIn={isLoggedIn} appointments={appointments} setCurrentPage={setCurrentPage} />
-          </ProtectedRoute>
-        } />
-
-        {/* Protected Doctor Routes */}
-        <Route path="/doctor-home" element={
-          <ProtectedRoute requiredUserType="doctor">
-            <DoctorHome darkMode={darkMode} />
           </ProtectedRoute>
         } />
 
@@ -311,6 +245,60 @@ function MainLayout() {
           <ProtectedRoute requiredUserType="doctor">
             <DoctorOnboarding darkMode={darkMode} />
           </ProtectedRoute>
+        } />
+
+        {/* Protected Patient Routes - Require profile completion */}
+        <Route path="/patient-home" element={
+          <ProtectedRoute requiredUserType="patient" requireProfileCompletion={true}>
+            <Home darkMode={darkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} setCurrentPage={setCurrentPage} setSelectedDoctor={setSelectedDoctor} setBookingData={setBookingData} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/my-appointments" element={
+          <ProtectedRoute requiredUserType="patient" requireProfileCompletion={true}>
+            <MyAppointments darkMode={darkMode} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/BookingTracker" element={
+          <ProtectedRoute requiredUserType="patient" requireProfileCompletion={true}>
+            <BookingTracker darkMode={darkMode} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/profile" element={
+          <ProtectedRoute requireProfileCompletion={true}>
+            <Profile darkMode={darkMode} selectedDoctor={selectedDoctor} bookingData={bookingData} setBookingData={setBookingData} handleBookAppointment={handleBookAppointment} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/confirmation" element={
+          <ProtectedRoute requireProfileCompletion={true}>
+            <Confirmation darkMode={darkMode} appointments={appointments} setCurrentPage={setCurrentPage} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/dashboard" element={
+          <ProtectedRoute requiredUserType="patient" requireProfileCompletion={true}>
+            <Dashboard darkMode={darkMode} isLoggedIn={isLoggedIn} appointments={appointments} setCurrentPage={setCurrentPage} />
+          </ProtectedRoute>
+        } />
+
+        {/* Protected Doctor Routes - Require profile completion */}
+        <Route path="/doctor-home" element={
+          <ProtectedRoute requiredUserType="doctor" requireProfileCompletion={true}>
+            <DoctorHome darkMode={darkMode} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/doctor-schedule" element={
+          <ProtectedRoute requiredUserType="doctor" requireProfileCompletion={true}>
+            <DoctorSchedule darkMode={darkMode} />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/doctor/:name" element={
+          <DoctorProfile darkMode={darkMode} setBookingData={setBookingData} />
         } />
 
         {/* Admin Routes */}
