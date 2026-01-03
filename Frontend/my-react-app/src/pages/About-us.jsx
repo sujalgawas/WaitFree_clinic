@@ -28,14 +28,16 @@ const AboutUs = () => {
       role: 'Chief Medical Officer',
       bio: 'With 15+ years in healthcare, Dr. Kumar provides medical oversight and ensures our platform meets the highest standards of patient care.',
       avatar: '👨‍⚕️',
-      specialty: 'General Medicine'
+      specialty: 'General Medicine',
+      icon: Stethoscope
     },
     {
       name: 'Priya Sharma',
       role: 'Head of Operations',
       bio: 'Former tech lead at major health tech companies, Priya brings cutting-edge solutions to make healthcare digital and operational.',
       avatar: '👩‍💼',
-      specialty: 'Operations & UX'
+      specialty: 'Operations & UX',
+      icon: Stethoscope
     }
   ];
 

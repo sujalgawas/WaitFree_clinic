@@ -21,7 +21,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import DoctorOnboarding from './pages/DoctorOnBoarding';
 import PatientOnboarding from './pages/PatientOnBoarding';
 import Pricing from './pages/Pricing';
-import AuthRequired from './pages/AuthRequired';
 import ProtectedRoute from './components/ProtectedRoute';
 import DoctorHome from './pages/DoctorHome';
 import DoctorProfile from './pages/DoctorProfile';

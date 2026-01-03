@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Calendar, Users, Clock, Shield, Video, FileText, ChevronRight, 
+import {
+  Calendar, Users, Clock, Shield, Video, FileText, ChevronRight,
   Star, CheckCircle, ArrowRight, Zap, TrendingUp, MessageCircle,
-  Smartphone, Cloud, Heart, BarChart, Phone, Mail, Globe
+  Smartphone, Cloud, Heart, BarChart, Phone, Mail, Globe,Stethoscope,AlertCircle
 } from 'lucide-react';
 
 const LandingPage = ({ darkMode }) => {
@@ -46,13 +46,13 @@ const LandingPage = ({ darkMode }) => {
       color: 'from-purple-500 to-pink-500',
       stat: '40% Remote Visits'
     },
-{
-  icon: Clock,
-  title: 'Estimated Visit Time',
-  description: 'Shows expected total time from clinic arrival to consultation, treatment, and discharge so patients know exactly when they will go home',
-  color: 'from-green-500 to-emerald-400',
-  stat: 'Up to 60% Less Waiting Time'
-},
+    {
+      icon: Clock,
+      title: 'Estimated Visit Time',
+      description: 'Shows expected total time from clinic arrival to consultation, treatment, and discharge so patients know exactly when they will go home',
+      color: 'from-green-500 to-emerald-400',
+      stat: 'Up to 60% Less Waiting Time'
+    },
     {
       icon: FileText,
       title: 'Smart Digital Prescriptions',
@@ -111,9 +111,9 @@ const LandingPage = ({ darkMode }) => {
   ];
 
   return (
-    
+
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-white'} transition-colors duration-300`}>
-      
+
       {/* Navigation */}
       {/* <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         isScrolled 
@@ -165,43 +165,39 @@ const LandingPage = ({ darkMode }) => {
       </nav> */}
 
       {/* Hero Section */}
-      <section className={`pt-32 pb-20 px-6 relative overflow-hidden ${
-        darkMode 
-          ? 'bg-gradient-to-br from-gray-900 via-blue-900/30 to-gray-900' 
+      <section className={`pt-32 pb-20 px-6 relative overflow-hidden ${darkMode
+          ? 'bg-gradient-to-br from-gray-900 via-blue-900/30 to-gray-900'
           : 'bg-gradient-to-br from-blue-50 via-white to-indigo-50'
-      }`}>
+        }`}>
         {/* Animated Background Elements */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
-          <div className={`absolute -top-40 -right-40 w-80 h-80 rounded-full ${
-            darkMode ? 'bg-blue-500/10' : 'bg-blue-300/20'
-          } blur-3xl animate-pulse`}></div>
-          <div className={`absolute -bottom-40 -left-40 w-80 h-80 rounded-full ${
-            darkMode ? 'bg-purple-500/10' : 'bg-purple-300/20'
-          } blur-3xl animate-pulse delay-1000`}></div>
+          <div className={`absolute -top-40 -right-40 w-80 h-80 rounded-full ${darkMode ? 'bg-blue-500/10' : 'bg-blue-300/20'
+            } blur-3xl animate-pulse`}></div>
+          <div className={`absolute -bottom-40 -left-40 w-80 h-80 rounded-full ${darkMode ? 'bg-purple-500/10' : 'bg-purple-300/20'
+            } blur-3xl animate-pulse delay-1000`}></div>
         </div>
-        
+
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-             <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-1.5 rounded-full font-bold mb-6 text-sm">
-            <CheckCircle className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-1.5 rounded-full font-bold mb-6 text-sm">
+                <CheckCircle className="w-4 h-4" />
                 Free for patients forever
-         </div>
-              
-              <h1 className={`text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight ${
-                darkMode ? 'text-white' : 'text-gray-900'
-              }`}>
-               Skip the Wait.
+              </div>
+
+              <h1 className={`text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight ${darkMode ? 'text-white' : 'text-gray-900'
+                }`}>
+                Skip the Wait.
                 <span className="text-transparent leading-normal bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 block">
-                See Your Doctor.
+                  See Your Doctor.
                 </span>
               </h1>
-              
+
               <p className={`text-xl mb-8 leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-               Wait Free clinic Book appointments instantly. Get real-time wait times. Consult from home. 
-               Healthcare without the hassle.
+                Wait Free clinic Book appointments instantly. Get real-time wait times. Consult from home.
+                Healthcare without the hassle.
               </p>
-                        
+
 
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 <button
@@ -211,14 +207,13 @@ const LandingPage = ({ darkMode }) => {
                   Start 30-Day Free Trial
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
                 </button>
-                
+
                 <button
                   onClick={() => navigate('/doctor-login')}
-                  className={`px-8 py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-3 transition-all transform hover:scale-105 border-2 ${
-                    darkMode 
-                      ? 'border-gray-700 hover:border-gray-600 text-white bg-gray-900/50' 
+                  className={`px-8 py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-3 transition-all transform hover:scale-105 border-2 ${darkMode
+                      ? 'border-gray-700 hover:border-gray-600 text-white bg-gray-900/50'
                       : 'border-gray-300 hover:border-gray-400 text-gray-900 bg-white'
-                  }`}
+                    }`}
                 >
                   <MessageCircle className="w-5 h-5" />
                   Book a Demo
@@ -239,9 +234,8 @@ const LandingPage = ({ darkMode }) => {
 
             {/* Hero Dashboard Preview */}
             <div className="relative">
-              <div className={`rounded-2xl shadow-2xl overflow-hidden transform rotate-3 hover:rotate-0 transition-transform duration-500 ${
-                darkMode ? 'bg-gray-800' : 'bg-white'
-              }`}>
+              <div className={`rounded-2xl shadow-2xl overflow-hidden transform rotate-3 hover:rotate-0 transition-transform duration-500 ${darkMode ? 'bg-gray-800' : 'bg-white'
+                }`}>
                 <div className={`p-4 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
                   <div className="flex gap-2">
                     <div className="w-3 h-3 rounded-full bg-red-500"></div>
@@ -263,16 +257,14 @@ const LandingPage = ({ darkMode }) => {
                   <div className={`h-48 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse`}></div>
                 </div>
               </div>
-              
+
               {/* Floating Elements */}
-              <div className={`absolute -top-6 -right-6 p-4 rounded-xl shadow-lg ${
-                darkMode ? 'bg-purple-600' : 'bg-purple-500'
-              }`}>
+              <div className={`absolute -top-6 -right-6 p-4 rounded-xl shadow-lg ${darkMode ? 'bg-purple-600' : 'bg-purple-500'
+                }`}>
                 <TrendingUp className="w-8 h-8 text-white" />
               </div>
-              <div className={`absolute -bottom-6 -left-6 p-4 rounded-xl shadow-lg ${
-                darkMode ? 'bg-blue-600' : 'bg-blue-500'
-              }`}>
+              <div className={`absolute -bottom-6 -left-6 p-4 rounded-xl shadow-lg ${darkMode ? 'bg-blue-600' : 'bg-blue-500'
+                }`}>
                 <Smartphone className="w-8 h-8 text-white" />
               </div>
             </div>
@@ -300,7 +292,7 @@ const LandingPage = ({ darkMode }) => {
           </div>
         </div>
       </section>
- {/* CTA Section for Patients */}
+      {/* CTA Section for Patients */}
       <section id='patient-portal' className={`py-20 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="max-w-4xl mx-auto text-center">
           <h2 className={`text-4xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -311,18 +303,17 @@ const LandingPage = ({ darkMode }) => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-                 onClick={() => navigate('/patient-login')}
+              onClick={() => navigate('/patient-login')}
               className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 shadow-lg"
             >
               Patient Login
             </button>
             <button
               onClick={() => navigate('/login')}
-              className={`px-8 py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 ${
-                darkMode 
-                  ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700' 
+              className={`px-8 py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 ${darkMode
+                  ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700'
                   : 'bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300'
-              }`}
+                }`}
             >
               Create Patient Account
             </button>
@@ -345,13 +336,12 @@ const LandingPage = ({ darkMode }) => {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <div 
+              <div
                 key={index}
-                className={`group p-8 rounded-2xl transition-all duration-300 transform hover:-translate-y-2 ${
-                  darkMode 
-                    ? 'bg-gray-800 hover:bg-gray-700 border border-gray-700' 
+                className={`group p-8 rounded-2xl transition-all duration-300 transform hover:-translate-y-2 ${darkMode
+                    ? 'bg-gray-800 hover:bg-gray-700 border border-gray-700'
                     : 'bg-white hover:bg-gray-50 border border-gray-200 shadow-lg hover:shadow-xl'
-                }`}
+                  }`}
               >
                 <div className={`inline-flex p-4 rounded-xl mb-6 bg-gradient-to-br ${feature.color}`}>
                   <feature.icon className="w-8 h-8 text-white" />
@@ -362,9 +352,8 @@ const LandingPage = ({ darkMode }) => {
                 <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   {feature.description}
                 </p>
-                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
-                  darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
-                }`}>
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                  }`}>
                   <TrendingUp className="w-4 h-4" />
                   {feature.stat}
                 </div>
@@ -373,67 +362,63 @@ const LandingPage = ({ darkMode }) => {
           </div>
         </div>
       </section>
-{/* Problem Statement
-    <section className="py-24 px-6 bg-gray-50"> {/* Softer background */}
-      {/* <div className="max-w-6xl mx-auto text-center">
-        <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-6" />
-      <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-12">
-         Healthcare Shouldn't Be This Hard
+      {/* Problem Statement*/}
+      <section className="py-24 px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto text-center">
+          <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-6" />
+          <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-12">
+            Healthcare Shouldn't Be This Hard
           </h2>
-         <div className="grid md:grid-cols-3 gap-8 text-left">
+          <div className="grid md:grid-cols-3 gap-8 text-left">
             <div className="bg-white p-8 rounded-2xl shadow-xl border border-red-100">
-             <div className="font-extrabold text-red-600 text-xl mb-4 flex items-center gap-2">
-            <Users className="w-6 h-6"/> For Patients
+              <div className="font-extrabold text-red-600 text-xl mb-4 flex items-center gap-2">
+                <Users className="w-6 h-6" /> For Patients
               </div>
               <ul className="space-y-3 text-gray-700">                <li className="flex items-start gap-3">
+                <span className="text-2xl text-red-500">❌</span>
+                <span>Hours wasted in agonizing waiting rooms</span>              </li>
+                <li className="flex items-start gap-3">
                   <span className="text-2xl text-red-500">❌</span>
-                 <span>Hours wasted in agonizing waiting rooms</span>              </li>
-               <li className="flex items-start gap-3">
-                  <span className="text-2xl text-red-500">❌</span>
-                 <span>Frustrating busy phone lines to book</span>
-               </li>
-              <li className="flex items-start gap-3">
-                   <span className="text-2xl text-red-500">❌</span>               <span>Lost prescription papers and health history</span>
+                  <span>Frustrating busy phone lines to book</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-2xl text-red-500">❌</span>               <span>Lost prescription papers and health history</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-2xl text-red-500">❌</span>
                   <span>No idea when you'll actually see the doctor</span>
                 </li>
-             </ul>            </div>
-                        <div className="bg-white p-8 rounded-2xl shadow-xl border border-red-100">
+              </ul>            </div>
+            <div className="bg-white p-8 rounded-2xl shadow-xl border border-red-100">
               <div className="font-extrabold text-red-600 text-xl mb-4 flex items-center gap-2">
-                <Stethoscope className="w-6 h-6"/> For Doctors
+                <Stethoscope className="w-6 h-6" /> For Doctors
               </div>
-               <ul className="space-y-3 text-gray-700">                <li className="flex items-start gap-3">
-                 <span className="text-2xl text-red-500">❌</span>
-                 <span>Constant phone and admin interruptions</span>
-               </li>
-               <li className="flex items-start gap-3">
-                 <span className="text-2xl text-red-500">❌</span>
-                 <span>Drowning in manual paperwork and records</span>
+              <ul className="space-y-3 text-gray-700">                <li className="flex items-start gap-3">
+                <span className="text-2xl text-red-500">❌</span>
+                <span>Constant phone and admin interruptions</span>
+              </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-2xl text-red-500">❌</span>
+                  <span>Drowning in manual paperwork and records</span>
                 </li>
                 <li className="flex items-start gap-3">
-                   <span className="text-2xl text-red-500">❌</span>
-                 <span>Patient no-shows waste valuable time</span>
+                  <span className="text-2xl text-red-500">❌</span>
+                  <span>Patient no-shows waste valuable time</span>
                 </li>
-                 <li className="flex items-start gap-3">
-                 <span className="text-2xl text-red-500">❌</span>
+                <li className="flex items-start gap-3">
+                  <span className="text-2xl text-red-500">❌</span>
                   <span>Hard to manage walk-ins and schedule flow</span>
                 </li>
               </ul>
-           </div>
+            </div>
 
             <div className="bg-blue-600 text-white p-8 rounded-2xl shadow-xl flex flex-col justify-center items-center text-center transform scale-105"> {/* Solution focus */}
-          {/* <CheckCircle className="w-16 h-16 mb-4" />
-             <div className="font-extrabold text-3xl mb-2">WaitFree Solves This</div>
+              <CheckCircle className="w-16 h-16 mb-4" />
+              <div className="font-extrabold text-3xl mb-2">WaitFree Solves This</div>
               <div className="text-blue-100 text-lg">Simple. Fast. Effective. Focus on <span className="font-bold">Health</span>.</div>
-           </div>
-           </div>         </div>
-     </section>  */}
-
-
-
-
+            </div>
+          </div>         </div>
+      </section>
 
 
 
@@ -474,23 +459,23 @@ const LandingPage = ({ darkMode }) => {
           </div>
         </div>
       </section>
-  
 
-         
-      
-   
-     {/* Footer */}
+
+
+
+
+      {/* Footer */}
       <footer className="py-16 px-6 bg-gray-900 text-white">
-<div className="max-w-7xl mx-auto">
-           <div className="grid grid-cols-2 md:grid-cols-5 gap-12 mb-12"> {/* Better alignment with 5 columns */}
-         <div className="col-span-2">
-               <div className="flex items-center gap-2 mb-4">
-                                <img
-                src="/Logo.png"
-                alt="WaitFree Clinic"
-                className="h-10 w-auto mr-2"  // space between image and text
-              />
-              
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-12 mb-12"> {/* Better alignment with 5 columns */}
+            <div className="col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <img
+                  src="/Logo.png"
+                  alt="WaitFree Clinic"
+                  className="h-10 w-auto mr-2"  // space between image and text
+                />
+
                 <span className="text-2xl font-extrabold">WaitFree<span className="text-blue-400">Clinic</span></span>
               </div>
               <p className="text-gray-400 text-sm max-w-xs">
