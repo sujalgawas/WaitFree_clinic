@@ -135,13 +135,7 @@ const ContactUs = () => {
 
   return (
     <div className={`min-h-screen ${bg} transition-colors duration-500`}>
-      {/* Theme Toggle */}
-      <button
-        onClick={() => setDarkMode(!darkMode)}
-        className={`fixed top-6 right-6 z-50 p-3 rounded-full ${cardBg} shadow-lg border ${borderColor} hover:scale-110 transition-transform`}
-      >
-        {darkMode ? <Sun className="w-6 h-6 text-yellow-400" /> : <Moon className="w-6 h-6 text-indigo-600" />}
-      </button>
+  
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-6 overflow-hidden">
@@ -249,7 +243,7 @@ const ContactUs = () => {
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-6">
                   {/* User Type Selection */}
                   <div>
                     <label className={`block text-sm font-semibold ${textPrimary} mb-3`}>
@@ -294,7 +288,6 @@ const ContactUs = () => {
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
-                        required
                         className={`w-full px-4 py-3 rounded-xl border-2 ${borderColor} ${inputBg} ${textPrimary} focus:border-blue-500 focus:outline-none transition-colors`}
                         placeholder="John Doe"
                       />
@@ -308,7 +301,6 @@ const ContactUs = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        required
                         className={`w-full px-4 py-3 rounded-xl border-2 ${borderColor} ${inputBg} ${textPrimary} focus:border-blue-500 focus:outline-none transition-colors`}
                         placeholder="john@example.com"
                       />
@@ -338,7 +330,6 @@ const ContactUs = () => {
                         name="subject"
                         value={formData.subject}
                         onChange={handleChange}
-                        required
                         className={`w-full px-4 py-3 rounded-xl border-2 ${borderColor} ${inputBg} ${textPrimary} focus:border-blue-500 focus:outline-none transition-colors`}
                       >
                         <option value="">Select a subject</option>
@@ -361,7 +352,6 @@ const ContactUs = () => {
                       name="message"
                       value={formData.message}
                       onChange={handleChange}
-                      required
                       rows="6"
                       className={`w-full px-4 py-3 rounded-xl border-2 ${borderColor} ${inputBg} ${textPrimary} focus:border-blue-500 focus:outline-none transition-colors resize-none`}
                       placeholder="Tell us how we can help you..."
@@ -371,7 +361,7 @@ const ContactUs = () => {
                   {/* Submit Button */}
                   <div>
                     <button
-                      type="submit"
+                      onClick={handleSubmit}
                       className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center gap-2"
                     >
                       <Send className="w-5 h-5" />
@@ -393,7 +383,7 @@ const ContactUs = () => {
                       </div>
                     </div>
                   )}
-                </form>
+                </div>
               </div>
             </div>
 
