@@ -14,6 +14,9 @@ import stripe
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 load_dotenv()
 
@@ -680,6 +683,409 @@ def get_payment_history():
     except Exception as e:
         print(f"Error fetching payment history: {e}")
         return jsonify({"error": "Failed to fetch payment history"}), 500
+
+# ==================== DIRECT EMAIL SENDING FUNCTION ====================
+def send_email_direct(to_email, subject, html_body, text_body=None):
+    """
+    Send email directly using Gmail SMTP (without Firebase Extension)
+    Uses credentials from Firebase SMTP settings
+    """
+    smtp_username = "sujalgawas18@gmail.com"
+    smtp_password = os.getenv('SMTP_PASSWORD', 'YOUR_APP_PASSWORD')  # Add to .env or hardcode
+    
+    # If no .env, hardcode your app password here temporarily
+    if smtp_password == 'YOUR_APP_PASSWORD':
+        smtp_password = "your-16-char-app-password"  # Replace with actual password
+    
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['From'] = smtp_username
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        
+        # Add text version (fallback)
+        if text_body:
+            text_part = MIMEText(text_body, 'plain')
+            msg.attach(text_part)
+        
+        # Add HTML version
+        html_part = MIMEText(html_body, 'html')
+        msg.attach(html_part)
+        
+        # Connect and send
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.login(smtp_username, smtp_password)
+        server.send_message(msg)
+        server.quit()
+        
+        print(f"✅ Email sent directly to {to_email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Email sending failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+# ==================== SEND EMAIL FROM FIRESTORE TEMPLATE ====================
+def send_email_from_firebase_template(template_name, to_email, template_data):
+    """
+    Fetch email template from Firestore and send email directly via SMTP
+    """
+    try:
+        # Fetch template from Firestore
+        template_doc = db.collection('email_templates').document(template_name).get()
+        
+        if not template_doc.exists:
+            print(f"❌ Template not found: {template_name}")
+            return False
+        
+        template = template_doc.to_dict()
+        
+        # Get subject, text, and html
+        subject = template.get('subject', 'WaitFree Clinic')
+        text = template.get('text', '')
+        html = template.get('html', '')
+        
+        # Replace template variables {{variable}}
+        for key, value in template_data.items():
+            subject = subject.replace(f'{{{{{key}}}}}', str(value))
+            text = text.replace(f'{{{{{key}}}}}', str(value))
+            html = html.replace(f'{{{{{key}}}}}', str(value))
+        
+        # Send email directly using SMTP
+        return send_email_direct(to_email, subject, html, text)
+    
+    except Exception as e:
+        print(f"❌ Error sending template email: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+# ==================== CONTACT US ENDPOINT ====================
+@app.route('/contact-us', methods=['POST'])
+def contact_us():
+    """
+    Handle contact form submissions
+    Store in Firestore and send emails directly via SMTP
+    """
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['name', 'email', 'userType', 'subject', 'message']
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        
+        if missing_fields:
+            return jsonify({
+                "success": False,
+                "message": f"Missing required fields: {', '.join(missing_fields)}"
+            }), 400
+        
+        # Extract form data
+        name = data.get('name', '').strip()
+        email = data.get('email', '').strip()
+        phone = data.get('phone', '').strip()
+        user_type = data.get('userType', 'patient')
+        subject = data.get('subject', '')
+        message = data.get('message', '').strip()
+        
+        # Basic email validation
+        if '@' not in email or '.' not in email:
+            return jsonify({
+                "success": False,
+                "message": "Invalid email address"
+            }), 400
+        
+        print(f"📝 Contact form received from: {name} ({email})")
+        
+        # Prepare contact data
+        contact_data = {
+            'name': name,
+            'email': email,
+            'phone': phone if phone else None,
+            'user_type': user_type,
+            'subject': subject,
+            'message': message,
+            'status': 'new',
+            'created_at': firestore.SERVER_TIMESTAMP,
+            'read': False,
+            'replied': False,
+            'ip_address': request.remote_addr
+        }
+        
+        # Save to Firestore
+        try:
+            contact_ref = db.collection('contact_submissions').document()
+            contact_ref.set(contact_data)
+            contact_id = contact_ref.id
+            
+            print(f"✅ Contact form saved: {contact_id}")
+        except Exception as db_error:
+            print(f"❌ Firestore Error: {db_error}")
+            return jsonify({
+                "success": False,
+                "message": "Failed to save your message. Please try again."
+            }), 500
+        
+        # Send emails directly using SMTP
+        email_success = True
+        try:
+            # Email to admin using template
+            admin_sent = send_email_from_firebase_template(
+                'contact_notification',
+                'sujalgawas18@gmail.com',  # Your admin email
+                {
+                    'contact_id': contact_id,
+                    'name': name,
+                    'email': email,
+                    'phone': phone if phone else 'Not provided',
+                    'user_type': user_type.title(),
+                    'subject': subject,
+                    'message': message,
+                    'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+            )
+            
+            # Confirmation email to user using template
+            user_sent = send_email_from_firebase_template(
+                'contact_confirmation',
+                email,
+                {
+                    'name': name,
+                    'subject': subject
+                }
+            )
+            
+            if admin_sent and user_sent:
+                print("✅ Both emails sent successfully")
+            elif admin_sent:
+                print("⚠️ Admin email sent, but user confirmation failed")
+            elif user_sent:
+                print("⚠️ User confirmation sent, but admin notification failed")
+            else:
+                print("⚠️ Both emails failed to send")
+                email_success = False
+            
+        except Exception as email_error:
+            print(f"⚠️ Email sending failed (non-critical): {email_error}")
+            email_success = False
+        
+        # Return success even if email fails (form is saved)
+        return jsonify({
+            "success": True,
+            "message": "Thank you for contacting us! We'll respond within 2 hours.",
+            "contact_id": contact_id,
+            "email_sent": email_success
+        }), 200
+    
+    except Exception as e:
+        print(f"❌ Error in contact_us: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "message": "An error occurred. Please try again later."
+        }), 500
+
+
+# ==================== ADMIN ENDPOINTS FOR CONTACT MANAGEMENT ====================
+
+@app.route('/admin/get-contact-submissions', methods=['POST'])
+def get_contact_submissions():
+    """
+    Get all contact form submissions (Admin only)
+    """
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        
+        # Verify admin
+        uid = token_to_uid(token)
+        if not uid:
+            return jsonify({"success": False, "message": "Unauthorized"}), 401
+        
+        # Check if user is admin
+        user_doc = db.collection('doctors').document(uid).get()
+        if not user_doc.exists:
+            return jsonify({"success": False, "message": "Access denied"}), 403
+        
+        # Get query parameters
+        status = data.get('status', 'all')
+        limit_count = data.get('limit', 50)
+        
+        # Query contact submissions
+        query = db.collection('contact_submissions')
+        
+        if status == 'unread':
+            query = query.where('read', '==', False)
+        elif status == 'replied':
+            query = query.where('replied', '==', True)
+        
+        query = query.order_by('created_at', direction=firestore.Query.DESCENDING).limit(limit_count)
+        
+        results = query.stream()
+        
+        submissions = []
+        for doc in results:
+            submission = doc.to_dict()
+            submission['id'] = doc.id
+            
+            # Convert timestamp to string
+            if 'created_at' in submission and submission['created_at']:
+                submission['created_at'] = submission['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+            
+            submissions.append(submission)
+        
+        return jsonify({
+            "success": True,
+            "submissions": submissions,
+            "count": len(submissions)
+        }), 200
+    
+    except Exception as e:
+        print(f"❌ Error getting submissions: {e}")
+        return jsonify({
+            "success": False,
+            "message": "Failed to fetch submissions"
+        }), 500
+
+
+@app.route('/admin/mark-contact-read', methods=['POST'])
+def mark_contact_read():
+    """
+    Mark a contact submission as read (Admin only)
+    """
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        contact_id = data.get('contact_id')
+        
+        # Verify admin
+        uid = token_to_uid(token)
+        if not uid:
+            return jsonify({"success": False, "message": "Unauthorized"}), 401
+        
+        if not contact_id:
+            return jsonify({"success": False, "message": "Contact ID required"}), 400
+        
+        # Update the contact submission
+        db.collection('contact_submissions').document(contact_id).update({
+            'read': True,
+            'read_at': firestore.SERVER_TIMESTAMP,
+            'read_by': uid
+        })
+        
+        return jsonify({
+            "success": True,
+            "message": "Marked as read"
+        }), 200
+    
+    except Exception as e:
+        print(f"❌ Error marking as read: {e}")
+        return jsonify({
+            "success": False,
+            "message": "Failed to update status"
+        }), 500
+
+
+@app.route('/admin/reply-to-contact', methods=['POST'])
+def reply_to_contact():
+    """
+    Send reply to contact form submission using email template and direct SMTP
+    """
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        contact_id = data.get('contact_id')
+        reply_message = data.get('reply_message', '').strip()
+        
+        # Verify admin
+        uid = token_to_uid(token)
+        if not uid:
+            return jsonify({"success": False, "message": "Unauthorized"}), 401
+        
+        if not contact_id or not reply_message:
+            return jsonify({"success": False, "message": "Contact ID and reply message required"}), 400
+        
+        # Get the original contact submission
+        contact_doc = db.collection('contact_submissions').document(contact_id).get()
+        if not contact_doc.exists:
+            return jsonify({"success": False, "message": "Contact not found"}), 404
+        
+        contact_data = contact_doc.to_dict()
+        
+        # Send reply email using template and direct SMTP
+        email_sent = send_email_from_firebase_template(
+            'contact_reply',
+            contact_data['email'],
+            {
+                'name': contact_data['name'],
+                'subject': contact_data['subject'],
+                'reply_message': reply_message,
+                'original_message': contact_data['message']
+            }
+        )
+        
+        if not email_sent:
+            return jsonify({
+                "success": False,
+                "message": "Failed to send reply email"
+            }), 500
+        
+        # Update contact submission
+        db.collection('contact_submissions').document(contact_id).update({
+            'replied': True,
+            'reply_message': reply_message,
+            'replied_at': firestore.SERVER_TIMESTAMP,
+            'replied_by': uid,
+            'status': 'resolved'
+        })
+        
+        return jsonify({
+            "success": True,
+            "message": "Reply sent successfully"
+        }), 200
+    
+    except Exception as e:
+        print(f"❌ Error in reply_to_contact: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "message": "Failed to send reply"
+        }), 500
+
+
+# ==================== TEST EMAIL ENDPOINT ====================
+@app.route('/test-email', methods=['POST'])
+def test_email():
+    """
+    Test endpoint to verify email sending works
+    """
+    try:
+        data = request.get_json()
+        test_email = data.get('email', 'sujalgawas18@gmail.com')
+        
+        success = send_email_direct(
+            test_email,
+            "Test Email from WaitFree Clinic",
+            "<h1>Test Email</h1><p>If you receive this, email sending is working!</p>",
+            "Test Email - If you receive this, email sending is working!"
+        )
+        
+        return jsonify({
+            "success": success,
+            "message": "Test email sent!" if success else "Failed to send test email"
+        }), 200
+    
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
 
 @app.route('/check-profile', methods=['POST'])
 def check_profile():
