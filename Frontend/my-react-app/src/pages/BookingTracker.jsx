@@ -218,7 +218,7 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
 
   if (!appointment) {
     return (
-      <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} p-6`}>
+      <div className={`min-h-screen mt-20 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} p-6`}>
         <div className="text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
           <p className={darkMode ? 'text-gray-300' : 'text-gray-700'}>
@@ -234,7 +234,7 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
   }
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} pb-20`}>
+    <div className={`min-h-screen mt-20  ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} pb-20`}>
       {/* Header */}
       <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm sticky top-0 z-10`}>
         <div className="max-w-4xl mx-auto px-4 py-4">

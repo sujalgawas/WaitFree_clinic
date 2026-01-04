@@ -1,152 +1,243 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Heart, Users, Clock, Shield, Award, Globe, 
   CheckCircle, Star, ArrowRight, Stethoscope, 
-  Activity, Zap, TrendingUp, MessageCircle, Lightbulb, Code
+  Activity, Zap, TrendingUp, MessageCircle, Lightbulb, Code,
+  Moon, Sun, Target, Rocket, Brain, Network
 } from 'lucide-react';
-
+import { useNavigate } from 'react-router-dom';
 const AboutUs = () => {
+  const [darkMode, setDarkMode] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+
+  const navigate = useNavigate();
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const team = [
     {
       name: 'Mr. Atish Ghanekar',
       role: 'Founder & Visionary',
-      bio: 'The main idea behind WaitFree Clinic originated from Mr. Atish Ghanekar, who envisioned a healthcare system free from long waits. His innovative thinking drives our mission to make healthcare accessible and efficient.',
+      bio: 'Pioneered the vision of eliminating healthcare wait times. His innovative approach to patient-centered care has revolutionized how thousands access quality healthcare services.',
       avatar: '👨‍💼',
       specialty: 'Healthcare Innovation & Strategy',
-      icon: Lightbulb
+      icon: Lightbulb,
+      gradient: 'from-purple-500 to-pink-500'
     },
     {
       name: 'Mr. Sujal Gawas',
       role: 'Co-Founder & Technical Lead',
-      bio: 'Supporting the vision with technical expertise, Mr. Sujal Gawas co-developed the platform, bringing cutting-edge technology to transform healthcare delivery and patient experience.',
+      bio: 'Transformed the vision into reality with cutting-edge technology. Leads our engineering team in building scalable, secure, and intelligent healthcare solutions.',
       avatar: '👨‍💻',
       specialty: 'Software Development & AI',
-      icon: Code
+      icon: Code,
+      gradient: 'from-blue-500 to-cyan-500'
     },
     {
       name: 'Dr. Rajesh Kumar',
       role: 'Chief Medical Officer',
-      bio: 'With 15+ years in healthcare, Dr. Kumar provides medical oversight and ensures our platform meets the highest standards of patient care.',
+      bio: 'Brings 15+ years of clinical excellence. Ensures every feature meets the highest medical standards while maintaining patient safety and care quality.',
       avatar: '👨‍⚕️',
-      specialty: 'General Medicine',
-      icon: Stethoscope
+      specialty: 'General Medicine & Healthcare Quality',
+      icon: Stethoscope,
+      gradient: 'from-green-500 to-emerald-500'
     },
     {
       name: 'Priya Sharma',
       role: 'Head of Operations',
-      bio: 'Former tech lead at major health tech companies, Priya brings cutting-edge solutions to make healthcare digital and operational.',
+      bio: 'Former tech lead at major health tech companies. Orchestrates seamless operations ensuring both doctors and patients have exceptional experiences.',
       avatar: '👩‍💼',
-      specialty: 'Operations & UX',
-      icon: Stethoscope
+      specialty: 'Operations & User Experience',
+      icon: Network,
+      gradient: 'from-orange-500 to-red-500'
     }
   ];
 
   const values = [
     {
       icon: Heart,
-      title: 'Patient-Centric',
-      description: 'Every decision we make puts patients first, ensuring care is accessible, respectful, and effective.'
+      title: 'Patient-Centric Care',
+      description: 'Every innovation starts with one question: How does this improve patient outcomes and experience?',
+      color: 'rose'
     },
     {
       icon: Shield,
       title: 'Trust & Security',
-      description: 'We maintain the highest standards of data privacy and security to protect your health information.'
+      description: 'Bank-grade encryption and HIPAA compliance ensure your health data remains private and protected.',
+      color: 'blue'
     },
     {
-      icon: Zap,
-      title: 'Innovation',
-      description: 'We leverage technology to solve real healthcare challenges and improve outcomes for everyone.'
+      icon: Brain,
+      title: 'AI-Powered Innovation',
+      description: 'Leveraging machine learning to predict wait times, optimize scheduling, and personalize care.',
+      color: 'purple'
     },
     {
       icon: Users,
-      title: 'Collaboration',
-      description: 'We work closely with doctors, patients, and healthcare providers to build better systems.'
+      title: 'Collaborative Ecosystem',
+      description: 'Building bridges between patients, doctors, and healthcare systems for holistic care delivery.',
+      color: 'green'
     }
   ];
 
   const milestones = [
-    { year: '2020', event: 'WaitFree Clinic founded by Mr. Atish Ghanekar with a vision to eliminate healthcare wait times' },
-    { year: '2021', event: 'Mr. Sujal Gawas joins as co-founder; launched real-time wait time feature, reducing average waits by 70%' },
-    { year: '2022', event: 'Expanded to 800+ doctors and 50K+ patients across India through collaborative development' },
-    { year: '2023', event: 'Introduced video consultations and digital prescriptions with enhanced technical support' },
-    { year: '2024', event: 'Achieved 4.8/5 patient satisfaction and 80% reduction in no-shows through ongoing innovation' }
+    { 
+      year: '2024', 
+      event: 'Foundation of WaitFree Clinic',
+      detail: 'Mr. Atish Ghanekar\'s vision to eliminate healthcare wait times becomes reality',
+      icon: Rocket
+    },
+    { 
+      year: '2025', 
+      event: 'Technical Revolution',
+      detail: 'Mr. Sujal Gawas joins; real-time wait tracking reduces average waits by 70%',
+      icon: Zap
+    }
   ];
 
+  const stats = [
+    { value: '50K+', label: 'Happy Patients', icon: Users },
+    { value: '800+', label: 'Expert Doctors', icon: Stethoscope },
+    { value: '15 min', label: 'Avg. Wait Time', icon: Clock },
+    { value: '4.8/5', label: 'Satisfaction', icon: Star }
+  ];
+
+  const bg = darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50';
+  const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
+  const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
+  const textSecondary = darkMode ? 'text-gray-300' : 'text-gray-600';
+  const borderColor = darkMode ? 'border-gray-700' : 'border-gray-200';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 font-sans">
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            About WaitFree Clinic
+    <div className={`min-h-screen ${bg} transition-colors duration-500`}>
+ 
+
+      {/* Hero Section with Parallax */}
+      <section className="relative pt-32 pb-24 px-6 overflow-hidden">
+        <div 
+          className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"
+          style={{ transform: `translateY(${scrollY * 0.5}px)` }}
+        />
+        <div className="absolute inset-0 bg-black opacity-20" />
+        
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" />
+          <div className="absolute top-40 right-10 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-1000" />
+          <div className="absolute -bottom-20 left-1/3 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-2000" />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto text-center">
+          <div className="inline-block mb-6">
+            <span className="bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-semibold border border-white/30">
+              🏆 India's #1 Wait-Free Healthcare Platform
+            </span>
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white leading-tight">
+            Revolutionizing Healthcare,
+            <br />
+            <span className="bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
+              One Patient at a Time
+            </span>
           </h1>
-          <p className="text-xl md:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Founded on the visionary idea of Mr. Atish Ghanekar and co-developed with Mr. Sujal Gawas, 
-            we're revolutionizing healthcare by eliminating wait times and making quality care accessible to everyone.
+          
+          <p className="text-xl md:text-2xl text-blue-100 mb-10 max-w-4xl mx-auto leading-relaxed">
+            Born from the visionary minds of <strong>Mr. Atish Ghanekar</strong> and <strong>Mr. Sujal Gawas</strong>, 
+            WaitFree Clinic is eliminating wait times and making quality healthcare accessible to everyone.
           </p>
+          
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg hover:shadow-xl transform hover:scale-105">
-              Join Our Mission
+            <button     onClick={() => navigate('/patient-login')} className="group bg-white text-blue-600 hover:bg-blue-50 px-8 py-4 rounded-full font-bold text-lg transition-all shadow-2xl hover:shadow-blue-500/50 transform hover:scale-105">
+              Join 50,000+ Patients
+              <ArrowRight className="w-5 h-5 inline ml-2 group-hover:translate-x-2 transition-transform" />
             </button>
-            <button className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg border-2 border-white/30 transition-all">
-              Learn More
+            <button     onClick={() => navigate('/doctor-login')} className="bg-transparent hover:bg-white/10 text-white px-8 py-4 rounded-full font-bold text-lg border-2 border-white/50 transition-all backdrop-blur-sm">
+              For Doctors
             </button>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 max-w-4xl mx-auto">
+            {stats.map((stat, idx) => (
+              <div key={idx} className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+                <stat.icon className="w-8 h-8 text-white mx-auto mb-3" />
+                <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
+                <div className="text-blue-100 text-sm">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Our Story */}
-      <section className="py-20 px-6">
+      {/* Vision & Mission */}
+      <section className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                Our Story: Born from Vision and Innovation
-              </h2>
-              <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                WaitFree Clinic was born from the groundbreaking idea of Mr. Atish Ghanekar, who recognized the inefficiencies 
-                in traditional healthcare systems. With the technical support and co-development by Mr. Sujal Gawas, 
-                what started as a concept has evolved into a comprehensive platform serving thousands.
-              </p>
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                Together, they built a system that not only reduces wait times but transforms the entire healthcare experience, 
-                making it more efficient, secure, and patient-focused through innovative technology and strategic vision.
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Users className="w-6 h-6 text-blue-600" />
-                  <span className="text-gray-700 font-semibold">50,000+ Patients Served</span>
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-8">
+              <div>
+                <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-4 py-2 rounded-full mb-4">
+                  <Target className="w-4 h-4" />
+                  <span className="font-semibold">Our Story</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Stethoscope className="w-6 h-6 text-blue-600" />
-                  <span className="text-gray-700 font-semibold">800+ Partner Doctors</span>
+                <h2 className={`text-4xl md:text-5xl font-bold ${textPrimary} mb-6 leading-tight`}>
+                  Born from Vision,
+                  <br />Built with Innovation
+                </h2>
+                <p className={`text-lg ${textSecondary} leading-relaxed mb-6`}>
+                  In 2020, <strong className={textPrimary}>Mr. Atish Ghanekar</strong> identified a critical problem: 
+                  patients were losing precious time and health in waiting rooms. His vision was simple yet revolutionary 
+                  – what if we could eliminate wait times entirely?
+                </p>
+                <p className={`text-lg ${textSecondary} leading-relaxed`}>
+                  Together with <strong className={textPrimary}>Mr. Sujal Gawas</strong>, this vision became reality. 
+                  Using cutting-edge technology, AI-powered scheduling, and real-time data analytics, they built a platform 
+                  that has served 50,000+ patients and partnered with 800+ doctors across India.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className={`${cardBg} border ${borderColor} p-6 rounded-2xl`}>
+                  <div className="text-3xl font-bold text-blue-600 mb-2">70%</div>
+                  <div className={`text-sm ${textSecondary}`}>Wait Time Reduction</div>
+                </div>
+                <div className={`${cardBg} border ${borderColor} p-6 rounded-2xl`}>
+                  <div className="text-3xl font-bold text-green-600 mb-2">80%</div>
+                  <div className={`text-sm ${textSecondary}`}>No-Show Reduction</div>
                 </div>
               </div>
             </div>
+
             <div className="relative">
-              <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
-                <div className="text-center mb-6">
-                  <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Heart className="w-10 h-10 text-blue-600" />
+              <div className={`${cardBg} border-2 ${borderColor} rounded-3xl shadow-2xl p-10 relative overflow-hidden`}>
+                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full filter blur-3xl opacity-20" />
+                
+                <div className="relative space-y-8">
+                  <div className="text-center mb-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                      <Heart className="w-10 h-10 text-white" />
+                    </div>
+                    <h3 className={`text-3xl font-bold ${textPrimary} mb-3`}>Our Mission</h3>
+                    <p className={textSecondary}>
+                      Making healthcare accessible, efficient, and patient-centered through technology and compassion.
+                    </p>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Our Mission</h3>
-                  <p className="text-gray-600">
-                    To make healthcare accessible, efficient, and patient-centered through innovative technology, 
-                    driven by the vision of Mr. Atish Ghanekar and the expertise of Mr. Sujal Gawas.
-                  </p>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-700">Reduce wait times by 80%</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
-                    <CheckCircle className="w-5 h-5 text-blue-600" />
-                    <span className="text-gray-700">Connect patients with top doctors instantly</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg">
-                    <CheckCircle className="w-5 h-5 text-purple-600" />
-                    <span className="text-gray-700">Ensure 100% data security and privacy</span>
+
+                  <div className="space-y-4">
+                    {[
+                      { icon: CheckCircle, text: 'Zero wait times for scheduled appointments', color: 'green' },
+                      { icon: Shield, text: 'Bank-grade security for health data', color: 'blue' },
+                      { icon: Brain, text: 'AI-powered doctor matching & scheduling', color: 'purple' },
+                      { icon: Globe, text: 'Accessible healthcare for all of India', color: 'indigo' }
+                    ].map((item, idx) => (
+                      <div key={idx} className={`flex items-center gap-4 p-4 bg-${item.color}-50 dark:bg-${item.color}-900/20 rounded-xl`}>
+                        <item.icon className={`w-6 h-6 text-${item.color}-600`} />
+                        <span className={textPrimary}>{item.text}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -155,15 +246,19 @@ const AboutUs = () => {
         </div>
       </section>
 
-      {/* Our Values */}
-      <section className="py-20 px-6 bg-gray-50">
+      {/* Core Values */}
+      <section className={`py-24 px-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Our Core Values
+            <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 px-4 py-2 rounded-full mb-4">
+              <Award className="w-4 h-4" />
+              <span className="font-semibold">Our Values</span>
+            </div>
+            <h2 className={`text-4xl md:text-5xl font-bold ${textPrimary} mb-4`}>
+              What Drives Us Forward
             </h2>
-            <p className="text-xl text-gray-600">
-              The principles that guide everything we do
+            <p className={`text-xl ${textSecondary} max-w-2xl mx-auto`}>
+              The principles that guide every decision, every feature, and every interaction
             </p>
           </div>
 
@@ -171,15 +266,18 @@ const AboutUs = () => {
             {values.map((value, index) => (
               <div 
                 key={index}
-                className="bg-white p-8 rounded-xl border-2 border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 text-center"
+                className={`group ${cardBg} border-2 ${borderColor} p-8 rounded-2xl hover:border-${value.color}-500 hover:shadow-2xl transition-all duration-300 text-center relative overflow-hidden`}
               >
-                <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <value.icon className="w-8 h-8 text-blue-600" />
+                <div className={`absolute inset-0 bg-gradient-to-br from-${value.color}-500 to-${value.color}-600 opacity-0 group-hover:opacity-5 transition-opacity`} />
+                
+                <div className={`bg-gradient-to-br from-${value.color}-400 to-${value.color}-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform`}>
+                  <value.icon className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                
+                <h3 className={`text-xl font-bold ${textPrimary} mb-4`}>
                   {value.title}
                 </h3>
-                <p className="text-gray-600">
+                <p className={textSecondary}>
                   {value.description}
                 </p>
               </div>
@@ -188,15 +286,19 @@ const AboutUs = () => {
         </div>
       </section>
 
-      {/* Our Team */}
-      <section className="py-20 px-6">
+      {/* Leadership Team */}
+      <section className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Meet Our Leadership Team
+            <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 px-4 py-2 rounded-full mb-4">
+              <Users className="w-4 h-4" />
+              <span className="font-semibold">Leadership</span>
+            </div>
+            <h2 className={`text-4xl md:text-5xl font-bold ${textPrimary} mb-4`}>
+              Meet the Visionaries
             </h2>
-            <p className="text-xl text-gray-600">
-              The visionary minds behind WaitFree Clinic
+            <p className={`text-xl ${textSecondary} max-w-2xl mx-auto`}>
+              The brilliant minds transforming healthcare delivery across India
             </p>
           </div>
 
@@ -204,102 +306,169 @@ const AboutUs = () => {
             {team.map((member, index) => (
               <div 
                 key={index}
-                className="bg-white p-8 rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-shadow duration-300 text-center"
+                className={`group ${cardBg} border-2 ${borderColor} rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden`}
               >
-                <div className="text-6xl mb-4">{member.avatar}</div>
-                <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <member.icon className="w-6 h-6 text-blue-600" />
+                <div className={`bg-gradient-to-br ${member.gradient} p-8 text-center relative`}>
+                  <div className="text-7xl mb-4 transform group-hover:scale-110 transition-transform">
+                    {member.avatar}
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm w-14 h-14 rounded-xl flex items-center justify-center mx-auto">
+                    <member.icon className="w-7 h-7 text-white" />
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  {member.name}
-                </h3>
-                <p className="text-blue-600 font-semibold mb-3">
-                  {member.role}
-                </p>
-                <p className="text-sm text-gray-500 mb-4">
-                  {member.specialty}
-                </p>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  {member.bio}
-                </p>
+                
+                <div className="p-6">
+                  <h3 className={`text-xl font-bold ${textPrimary} mb-1`}>
+                    {member.name}
+                  </h3>
+                  <p className={`bg-gradient-to-r ${member.gradient} bg-clip-text text-transparent font-bold mb-2`}>
+                    {member.role}
+                  </p>
+                  <p className={`text-xs ${textSecondary} mb-3 font-semibold`}>
+                    {member.specialty}
+                  </p>
+                  <p className={`text-sm ${textSecondary} leading-relaxed`}>
+                    {member.bio}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Timeline */}
-      <section className="py-20 px-6 bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="max-w-4xl mx-auto">
+      {/* Journey Timeline */}
+      <section className={`py-24 px-6 ${darkMode ? 'bg-gray-800' : 'bg-gradient-to-br from-blue-50 to-indigo-50'}`}>
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Our Journey
+            <div className="inline-flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 px-4 py-2 rounded-full mb-4">
+              <TrendingUp className="w-4 h-4" />
+              <span className="font-semibold">Our Journey</span>
+            </div>
+            <h2 className={`text-4xl md:text-5xl font-bold ${textPrimary} mb-4`}>
+              Milestones of Innovation
             </h2>
-            <p className="text-xl text-gray-600">
-              Key milestones in our mission to transform healthcare
+            <p className={`text-xl ${textSecondary}`}>
+              From vision to reality – our growth story
             </p>
           </div>
 
-          <div className="space-y-8">
-            {milestones.map((milestone, index) => (
-              <div key={index} className="flex items-center gap-6">
-                <div className="flex-shrink-0 w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  {milestone.year}
+          <div className="relative">
+            <div className={`absolute left-12 top-0 bottom-0 w-1 ${darkMode ? 'bg-gray-700' : 'bg-gradient-to-b from-blue-400 to-purple-600'}`} />
+            
+            <div className="space-y-12">
+              {milestones.map((milestone, index) => (
+                <div key={index} className="flex items-start gap-8 relative">
+                  <div className="flex-shrink-0 w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex flex-col items-center justify-center text-white font-bold shadow-xl z-10">
+                    <milestone.icon className="w-6 h-6 mb-1" />
+                    <span className="text-sm">{milestone.year}</span>
+                  </div>
+                  
+                  <div className={`flex-1 ${cardBg} border-2 ${borderColor} p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow`}>
+                    <h3 className={`text-xl font-bold ${textPrimary} mb-2`}>
+                      {milestone.event}
+                    </h3>
+                    <p className={textSecondary}>
+                      {milestone.detail}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                  <p className="text-gray-700 leading-relaxed">{milestone.event}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="py-16 bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl md:text-5xl font-bold text-blue-400 mb-2">50K+</div>
-              <div className="text-gray-300">Patients Served</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold text-blue-400 mb-2">800+</div>
-              <div className="text-gray-300">Partner Doctors</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold text-blue-400 mb-2">15 min</div>
-              <div className="text-gray-300">Average Wait Time</div>
-            </div>
-            <div>
-              <div className="text-4xl md:text-5xl font-bold text-blue-400 mb-2">4.8/5</div>
-              <div className="text-gray-300">Patient Satisfaction</div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Join Us in Transforming Healthcare
+      {/* CTA Section */}
+      <section className="relative py-24 px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600" />
+        <div className="absolute inset-0 bg-black opacity-30" />
+        
+        <div className="relative max-w-5xl mx-auto text-center">
+          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+            Join the Healthcare Revolution
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Whether you're a patient seeking better care or a doctor wanting to serve more patients, 
-            WaitFree Clinic is here to help, built on the vision of Mr. Atish Ghanekar and Mr. Sujal Gawas.
+          <p className="text-xl md:text-2xl text-blue-100 mb-10 max-w-3xl mx-auto">
+            Whether you're a patient seeking better care or a doctor wanting to serve more efficiently, 
+            WaitFree Clinic is your partner in modern healthcare.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg hover:shadow-xl transform hover:scale-105">
-              Get Started Today
-              <ArrowRight className="w-5 h-5 inline ml-2" />
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <button     onClick={() => navigate('/patient-login')} className="group bg-white text-blue-600 hover:bg-blue-50 px-10 py-5 rounded-full font-bold text-lg transition-all shadow-2xl hover:shadow-white/50 transform hover:scale-105">
+              Get Started as Patient
+              <ArrowRight className="w-5 h-5 inline ml-2 group-hover:translate-x-2 transition-transform" />
             </button>
-            <button className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg border-2 border-white/30 transition-all">
-              Contact Us
+            <button     onClick={() => navigate('/doctor-login')} className="bg-transparent hover:bg-white/10 text-white px-10 py-5 rounded-full font-bold text-lg border-2 border-white/50 transition-all backdrop-blur-sm">
+              Join as Doctor
             </button>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-8 text-white">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5" />
+              <span>Free to Join</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5" />
+              <span>24/7 Support</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5" />
+              <span>Secure & Private</span>
+            </div>
           </div>
         </div>
       </section>
+      
+      {/* Footer */}
+      <footer className="py-16 px-6 bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-12 mb-12"> {/* Better alignment with 5 columns */}
+            <div className="col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <img
+                  src="/Logo.png"
+                  alt="WaitFree Clinic"
+                  className="h-10 w-auto mr-2"  // space between image and text
+                />
+
+                <span className="text-2xl font-extrabold">WaitFree<span className="text-blue-400">Clinic</span></span>
+              </div>
+              <p className="text-gray-400 text-sm max-w-xs">
+                Making modern healthcare accessible and convenient by putting time back in your day.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">For Patients</h4>
+              <ul className="space-y-3">
+                <li><a href="/Search" className="text-gray-400 hover:text-white transition-colors">Find Doctors</a></li>
+                <li>
+                  <a href='/patient-login' className="text-gray-400 hover:text-white transition-colors">Book Appointment</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Video Consultation</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">For Doctors</h4>
+              <ul className="space-y-3">
+                <li><a href="/Login" className="text-gray-400 hover:text-white transition-colors">Doctor Login</a></li>
+                <li><a href="/Login" className="text-gray-400 hover:text-white transition-colors">Register Clinic</a></li>
+                <li><a href="/Pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">Company</h4>
+              <ul className="space-y-3">
+                <li><a href="/About-us" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+                <li><a href="Contact" className="text-gray-400 hover:text-white transition-colors">Contact Us</a></li>
+                <li><a href="/Privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
+            <p>© 2026 WaitFree-Clinic. All rights reserved. | Built with 💙 for modern healthcare.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
