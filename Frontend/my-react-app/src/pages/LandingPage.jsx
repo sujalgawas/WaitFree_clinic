@@ -309,7 +309,7 @@ const LandingPage = ({ darkMode }) => {
               Patient Login
             </button>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/patient-login')}
               className={`px-8 py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 ${darkMode
                   ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700'
                   : 'bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300'
@@ -503,7 +503,7 @@ const LandingPage = ({ darkMode }) => {
               <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">Company</h4>
               <ul className="space-y-3">
                 <li><a href="/About-us" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
-                <li><a href="Contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                <li><a href="Contact" className="text-gray-400 hover:text-white transition-colors">Contact Us</a></li>
                 <li><a href="/Privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
               </ul>
             </div>

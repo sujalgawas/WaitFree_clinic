@@ -64,7 +64,7 @@ export default function MyAppointments({ darkMode }) {
   }
 
   return (
-    <div className={`min-h-screen p-6 font-inter ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+    <div className={`min-h-screen mt-20 p-6 font-inter ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
       <div className="max-w-4xl mx-auto">
         <button 
           onClick={() => navigate(-1)} 

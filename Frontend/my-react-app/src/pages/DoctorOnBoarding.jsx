@@ -546,9 +546,9 @@ export default function DoctorOnboarding() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-blue-50 to-indigo-100 py-8 px-4">
-      <div className="max-w-5xl mx-auto">
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+    <div className="min-h-screen  mt-12 bg-gradient-to-br from-teal-50 via-blue-50 to-indigo-100 py-8 px-12">
+      <div className="max-w-9xl mx-auto">
+        <div className="bg-white w-full rounded-3xl shadow-2xl overflow-hidden">
           
           {/* Header */}
           <div className="relative bg-gradient-to-r from-teal-600 via-teal-500 to-green-500 p-8 text-white">
@@ -565,31 +565,44 @@ export default function DoctorOnboarding() {
           </div>
 
           {/* Progress Indicator */}
-          <div className="px-8 pt-8">
-            <div className="flex items-center justify-between mb-2">
-              {[1, 2, 3].map((num) => (
-                <div key={num} className="flex items-center flex-1">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
-                    step >= num 
-                      ? 'bg-gradient-to-br from-teal-500 to-green-500 text-white shadow-lg' 
-                      : 'bg-gray-200 text-gray-400'
-                  }`}>
-                    {step > num ? <CheckCircle className="w-5 h-5" /> : num}
-                  </div>
-                  {num < 3 && (
-                    <div className={`flex-1 h-1 mx-2 rounded-full transition-all ${
-                      step > num ? 'bg-gradient-to-r from-teal-500 to-green-500' : 'bg-gray-200'
-                    }`}></div>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between text-xs text-gray-500 font-medium mt-2">
-              <span>Professional</span>
-              <span>Clinic Info</span>
-              <span>Availability</span>
-            </div>
+        <div className="px-11 pt-8">
+  <div className="relative mb-6">
+
+    {/* Full background line */}
+    <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 bg-gray-200 rounded-full" />
+
+    {/* Active line */}
+    <div
+      className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-gradient-to-r from-teal-500 to-green-500 transition-all duration-500"
+      style={{ width: `${(step - 1) * 50}%` }}
+    />
+
+    {/* Numbers */}
+    <div className="grid grid-cols-3 relative z-10">
+      {[1, 2, 3].map((num) => (
+        <div key={num} className="flex justify-center">
+          <div
+            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
+              step >= num
+                ? 'bg-gradient-to-br from-teal-500 to-green-500 text-white shadow-lg'
+                : 'bg-gray-200 text-gray-400'
+            }`}
+          >
+            {step > num ? <CheckCircle className="w-5 h-5" /> : num}
           </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {/* Labels */}
+  <div className="grid grid-cols-3 text-xs text-gray-500 font-medium text-center">
+    <span>Professional</span>
+    <span>Clinic Info</span>
+    <span>Availability</span>
+  </div>
+</div>
+
 
           {/* Form Content */}
           <div className="p-8">
