@@ -14,8 +14,12 @@ export default function DoctorSchedule({ darkMode }) {
       if (!token) return navigate('/login');
 
       try {
-        const response = await axios.post('http://127.0.0.1:5000/get-doctor-schedule', { token });
-        setSchedule(response.data.schedule);
+        const date = new Date().toLocaleDateString('en-CA');
+        const response = await axios.post('http://127.0.0.1:5000/scheduler/optimized-queue', { 
+            token, 
+            date 
+        });
+        setSchedule(response.data.schedule || []);
       } catch (err) {
         console.error("Error fetching schedule:", err);
       } finally {
@@ -52,22 +56,31 @@ export default function DoctorSchedule({ darkMode }) {
                 }`}
               >
                 <div className="flex gap-4 items-center">
-                  <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold">
-                    {appt.patient_name ? appt.patient_name[0] : <User />}
+                  <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold text-xl ring-4 ring-purple-50">
+                    {appt.queue_position ? `#${appt.queue_position}` : <User />}
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg">Patient ID: {appt.patient_uid.slice(0,8)}...</h3>
+                    <h3 className="font-bold text-lg">{appt.patient_name || `Patient ID: ${appt.patient_uid.slice(0,8)}...`}</h3>
                     <div className="flex flex-wrap gap-3 mt-1 text-sm opacity-70">
-                      <span className="flex items-center gap-1"><Clock size={14}/> {appt.slot}</span>
-                      <span className="flex items-center gap-1"><Calendar size={14}/> {appt.date}</span>
+                      <span className="flex items-center gap-1 font-semibold text-blue-600">
+                        <Clock size={14}/> {appt.appointment_time_str ? appt.appointment_time_str.split(' ')[1] : appt.slot}
+                      </span>
+                      <span className="flex items-center gap-1"><Calendar size={14}/> {appt.appointment_time_str ? appt.appointment_time_str.split(' ')[0] : appt.date}</span>
+                      {appt.urgency_label && (
+                         <span className={`px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wide ${
+                            appt.urgency_label === 'critical' ? 'bg-red-100 text-red-700' :
+                            appt.urgency_label === 'high' ? 'bg-orange-100 text-orange-700' :
+                            'bg-green-100 text-green-700'
+                         }`}>{appt.urgency_label}</span>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4">
                   <div className="text-right hidden md:block">
-                    <p className="text-xs uppercase opacity-50 font-bold">Status</p>
-                    <p className="text-green-500 font-bold">Confirmed</p>
+                    <p className="text-xs uppercase opacity-50 font-bold">Duration</p>
+                    <p className="font-bold">{appt.consultation_time_min || 15} min</p>
                   </div>
                   <button className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">
                     View Records

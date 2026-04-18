@@ -7,6 +7,10 @@ from app.crud.appointments_crud import (
     get_appointments_by_patient, get_appointments_by_doctor
 )
 from app.crud.doctors_crud import get_doctor_by_uid, get_doctor_by_name
+import threading
+import logging
+
+log = logging.getLogger(__name__)
 
 appointment_bp = Blueprint('appointment', __name__)
 
@@ -44,6 +48,23 @@ def booking():
         }
 
         appt_id = create_appointment(appointment_data)
+
+        # ── Non-blocking queue re-optimisation ──────────────────────────
+        # Triggers in a background thread so the booking response is instant.
+        # The updated schedule is persisted to Firestore by queue_manager.
+        def _reoptimize():
+            try:
+                from app.scheduling import queue_manager
+                queue_manager.build_optimized_queue(
+                    doctor_uid=doctor_uid,
+                    date_str=date,
+                )
+                log.info(f"Queue re-optimised for doctor={doctor_uid} date={date}")
+            except Exception as ex:
+                log.error(f"Background queue optimisation failed: {ex}")
+
+        threading.Thread(target=_reoptimize, daemon=True).start()
+
         return jsonify({"message": "Booking successful", "appointment_id": appt_id}), 200
 
     except Exception as e:

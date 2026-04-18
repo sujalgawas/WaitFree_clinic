@@ -117,7 +117,20 @@ def get_appointment_locations():
                 }
                 print(f"Patient location found: {patient_location}")
 
-        doctor_doc = get_doctor_by_uid(doctor_uid)
+        doctor_name = data.get('doctor_name')
+        doctor_doc = None
+        
+        # Resolve doctor doc by uid or name
+        if doctor_uid:
+            doctor_doc = get_doctor_by_uid(doctor_uid)
+        elif doctor_name:
+            from app.crud.doctors_crud import get_doctor_by_name
+            # Fallback for old appointments lacking uid
+            doctor_data = get_doctor_by_name(doctor_name)
+            if doctor_data and 'uid' in doctor_data:
+                doctor_uid = doctor_data['uid']
+                doctor_doc = get_doctor_by_uid(doctor_uid)
+
         clinic_location = None
         clinic_info = {}
         clinic_details = {}
@@ -128,8 +141,15 @@ def get_appointment_locations():
             print(f"Doctor clinic details: {clinic_details}")
 
             maps_link = clinic_details.get('google_maps_link', '')
-
-            if maps_link:
+            saved_location = clinic_details.get('location', {})
+            
+            if saved_location and 'lat' in saved_location and 'lng' in saved_location:
+                clinic_location = {
+                    'lat': float(saved_location['lat']),
+                    'lng': float(saved_location['lng'])
+                }
+                print(f"Using saved clinic location: {clinic_location}")
+            elif maps_link:
                 print(f"Attempting to extract from maps link: {maps_link}")
                 clinic_location = extract_coordinates_from_maps_link(maps_link)
                 if clinic_location:
@@ -137,7 +157,7 @@ def get_appointment_locations():
                 else:
                     print("Failed to extract coordinates from maps link")
             else:
-                print("No Google Maps link found in clinic details")
+                print("No location data found in clinic details")
 
             clinic_info = {
                 'name': clinic_details.get('name', 'Unknown Clinic'),

@@ -19,6 +19,33 @@ import API_KEYS from '../assets/API_keys.json';
 
 const libraries = ['places', 'directions'];
 
+const isValidMapLink = (url) => {
+  if (!url) return false;
+  try {
+    const u = new URL(url.startsWith('http') ? url : `https://${url}`);
+    const host = u.hostname.toLowerCase();
+    return host.includes('google') || host.includes('goo.gl');
+  } catch (e) {
+    return false;
+  }
+};
+
+const getCoordinatesFromAddress = async (address) => {
+  if (!address) return null;
+  const key = API_KEYS.GOOGLE_API_KEY;
+  try {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.results && data.results.length > 0) {
+      return data.results[0].geometry.location;
+    }
+  } catch (e) {
+    console.error("Geocoding failed", e);
+  }
+  return null;
+};
+
 export default function BookingTracker({ appointment, darkMode, onBack }) {
   const [userLocation, setUserLocation] = useState(null);
   const [directions, setDirections] = useState(null);
@@ -29,6 +56,10 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [mapError, setMapError] = useState(null);
   const [debugInfo, setDebugInfo] = useState(null);
+  
+  // New state for AI Scheduling
+  const [scheduleInfo, setScheduleInfo] = useState(null);
+  const [loadingSchedule, setLoadingSchedule] = useState(true);
 
   // Load Google Maps API
   const { isLoaded, loadError } = useLoadScript({
@@ -45,14 +76,35 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
 
   // Get accurate locations from backend
   useEffect(() => {
-    if (appointment && appointment.doctor_uid) {
+    if (appointment && (appointment.doctor_uid || appointment.doctor_name)) {
       getAccurateLocations();
+      fetchScheduleInfo();
     } else {
-      console.error('Missing doctor_uid in appointment:', appointment);
+      console.error('Missing doctor info in appointment:', appointment);
       setMapError('Missing doctor information');
       setLoadingLocation(false);
+      setLoadingSchedule(false);
     }
   }, [appointment]);
+
+  const fetchScheduleInfo = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await axios.post('http://127.0.0.1:5000/scheduler/patient-schedule', {
+        token: token,
+        doctor_uid: appointment.doctor_uid,
+        doctor_name: appointment.doctor_name,
+        date: appointment.date
+      });
+      if (response.data.success && response.data.slot) {
+        setScheduleInfo(response.data.slot);
+      }
+    } catch (err) {
+      console.error("Error fetching patient schedule info:", err);
+    } finally {
+      setLoadingSchedule(false);
+    }
+  };
 
   const getAccurateLocations = async () => {
     try {
@@ -63,7 +115,8 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
       // Fetch both patient and clinic locations from backend
       const response = await axios.post('http://127.0.0.1:5000/get-appointment-locations', {
         token: token,
-        doctor_uid: appointment.doctor_uid
+        doctor_uid: appointment.doctor_uid,
+        doctor_name: appointment.doctor_name
       });
       
       console.log('Location response:', response.data);
@@ -87,12 +140,25 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
           console.log('✓ Clinic location set:', response.data.clinic_location);
           setMapError(null);
         } else {
-          console.warn('⚠ Clinic location not available');
-          setMapError('Clinic location could not be extracted from Google Maps link');
+          console.warn('⚠ Clinic location not strictly extracted. Falling back to Geocoding API...');
+          let geocoded = false;
+          if (response.data.clinic_info?.address) {
+             const manualAddress = `${response.data.clinic_info.address}, ${response.data.clinic_info.zip_code || ''}`;
+             const coords = await getCoordinatesFromAddress(manualAddress);
+             if (coords) {
+                setClinicLocation(coords);
+                setMapError(null);
+                geocoded = true;
+                console.log('✓ Clinic location geocoded:', coords);
+             }
+          }
           
-          // Log the maps link for debugging
-          if (response.data.clinic_info?.google_maps_link) {
-            console.log('Google Maps link:', response.data.clinic_info.google_maps_link);
+          if (!geocoded) {
+            setMapError('Clinic location could not be extracted from string address or Maps link.');
+            
+            if (response.data.clinic_info?.google_maps_link) {
+              console.log('Google Maps link (failed extract):', response.data.clinic_info.google_maps_link);
+            }
           }
         }
         
@@ -210,9 +276,13 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
     if (clinicLocation && userLocation) {
       const url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${clinicLocation.lat},${clinicLocation.lng}&travelmode=driving`;
       window.open(url, '_blank');
-    } else if (clinicInfo.google_maps_link) {
+    } else if (isValidMapLink(clinicInfo.google_maps_link)) {
       // Fallback to opening the clinic's Google Maps link
-      window.open(clinicInfo.google_maps_link, '_blank');
+      let link = clinicInfo.google_maps_link;
+      if (!link.startsWith('http')) {
+         link = `https://${link}`;
+      }
+      window.open(link, '_blank');
     }
   };
 
@@ -313,9 +383,9 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
                 <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
                   {clinicInfo.address || appointment.clinic_address || 'Address not available'}
                 </p>
-                {clinicInfo.google_maps_link && (
+                {isValidMapLink(clinicInfo.google_maps_link) && (
                   <a 
-                    href={clinicInfo.google_maps_link} 
+                    href={clinicInfo.google_maps_link.startsWith('http') ? clinicInfo.google_maps_link : `https://${clinicInfo.google_maps_link}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1 mt-1"
@@ -348,6 +418,43 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
             </div>
           </div>
         </div>
+
+        {/* AI Schedule Info Display */}
+        {!loadingSchedule && scheduleInfo && (
+          <div className={`${darkMode ? 'bg-gradient-to-r from-blue-900 to-purple-900' : 'bg-gradient-to-r from-blue-50 to-indigo-50'} rounded-xl shadow-lg p-6 border border-blue-100 dark:border-blue-800`}>
+             <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-blue-900'}`}>
+                <Activity size={20} className="text-blue-500" />
+                Live Tracking Info (AI Predicted)
+             </h2>
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-3 shadow-sm border border-black/5`}>
+                   <p className={`text-xs uppercase opacity-70 font-bold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Queue Position</p>
+                   <p className="text-2xl font-black text-blue-600">#{scheduleInfo.queue_position || '?'}</p>
+                </div>
+                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-3 shadow-sm border border-black/5`}>
+                   <p className={`text-xs uppercase opacity-70 font-bold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Est. Wait Time</p>
+                   <p className="text-xl font-bold">{scheduleInfo.wait_time_min ? `${Math.round(scheduleInfo.wait_time_min)} min` : 'None'}</p>
+                </div>
+                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-3 shadow-sm border border-black/5`}>
+                   <p className={`text-xs uppercase opacity-70 font-bold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Dr. Ready At</p>
+                   <p className="text-xl font-bold text-green-600">
+                      {scheduleInfo.appointment_time_str ? scheduleInfo.appointment_time_str.split(' ')[1] : appointment.slot}
+                   </p>
+                </div>
+                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-3 shadow-sm border border-black/5`}>
+                   <p className={`text-xs uppercase opacity-70 font-bold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Priority</p>
+                   <p className="text-lg font-bold capitalize">
+                      {scheduleInfo.urgency_label || 'Normal'}
+                   </p>
+                </div>
+             </div>
+             {scheduleInfo.scheduling_note && (
+                <p className={`text-xs mt-4 italic ${darkMode ? 'text-blue-300/70' : 'text-blue-600/70'}`}>
+                   Note: {scheduleInfo.scheduling_note}
+                </p>
+             )}
+          </div>
+        )}
 
         {/* Map with Directions */}
         <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
@@ -462,7 +569,7 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
               <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-2`}>
                 Location data not available
               </p>
-              {clinicInfo.google_maps_link && (
+              {isValidMapLink(clinicInfo.google_maps_link) && (
                 <button
                   onClick={openInGoogleMaps}
                   className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
