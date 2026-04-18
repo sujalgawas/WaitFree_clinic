@@ -6,3 +6,9 @@ requests
 google-genai
 stripe
 dotenv
+python-dotenv
+
+# MCP Server dependencies
+mcp[cli]
+fastmcp
+Pillow

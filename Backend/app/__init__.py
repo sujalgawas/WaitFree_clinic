@@ -31,6 +31,7 @@ def create_app():
     from app.api.search_routes import search_bp
     from app.api.payment_routes import payment_bp
     from app.api.contact_routes import contact_bp
+    from app.api.verify_routes import verify_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(profile_bp)
@@ -39,5 +40,6 @@ def create_app():
     app.register_blueprint(search_bp)
     app.register_blueprint(payment_bp)
     app.register_blueprint(contact_bp)
+    app.register_blueprint(verify_bp)
 
     return app
