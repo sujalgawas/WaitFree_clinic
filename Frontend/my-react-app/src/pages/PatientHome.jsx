@@ -192,7 +192,7 @@ export default function PatientHome({ darkMode, searchQuery, setSearchQuery, set
           </div>
         </div>
       </div>
-      
+      <div className=''>
      {/* Footer */}
       <footer className="py-16 px-6 bg-gray-900 text-white">
 <div className="max-w-7xl mx-auto">
@@ -243,6 +243,6 @@ export default function PatientHome({ darkMode, searchQuery, setSearchQuery, set
         </div>
       </footer>
     </div>
-    
+    </div>
   );
 }
