@@ -65,7 +65,8 @@ export default function Header({
   const hoverTextColor = 'hover:text-blue-500';
 
   const isTransparentAllowed = ['/', '/patient-home', '/doctor-home'].includes(location.pathname);
-
+const hideOnPages = ['/doctor-home', '/doctor-schedule', '/Pricing','/LiveQueueDashboard'];
+const hideOnfeaturePages = ['/doctor-home', ];
   return (
     
 <header className={`fixed w-full top-0 z-50 transition-all duration-300 ${
@@ -93,12 +94,14 @@ export default function Header({
 
       {/* Desktop Navigation - CENTER */}
       <nav className="hidden md:flex items-center justify-center space-x-6 lg:space-x-8">
+        {!hideOnfeaturePages.includes(location.pathname) && (
         <button
           onClick={() => handleScroll("features")}
           className={`${baseTextColor} ${hoverTextColor} font-medium transition-colors duration-200 whitespace-nowrap text-sm lg:text-base`}
         >
           Features
         </button>
+        )}
         <button
           onClick={() => { setCurrentPage('Pricing'); }}
           className={`${baseTextColor} ${hoverTextColor} font-medium transition-colors duration-200 whitespace-nowrap text-sm lg:text-base`}
@@ -111,13 +114,21 @@ export default function Header({
         >
           Patient Portal
         </button>
-        <button
-          onClick={() => setCurrentPage('search')}
-          className={`${baseTextColor} ${hoverTextColor} font-medium transition-colors duration-200 flex items-center gap-2 whitespace-nowrap text-sm lg:text-base`}
-        >
-          <Search className='w-4 h-4' />
-          Find Doctors
-        </button>
+        {location.pathname === "/doctor-home" && (
+  <button             className={`text-left py-3 px-3 ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-900' : 'hover:bg-gray-50'} font-medium`}
+onClick={() => navigate("/LiveQueueDashboard")}>
+    Live Queue
+  </button>
+)}
+{!hideOnPages.includes(location.pathname) && (
+  <button
+    onClick={() => navigate('/search')}
+    className={`${baseTextColor} ${hoverTextColor} font-medium transition-colors duration-200 flex items-center gap-2 whitespace-nowrap text-sm lg:text-base`}
+  >
+    <Search className='w-4 h-4' />
+    Find Doctors
+  </button>
+)}
       </nav>
 
       {/* Right Section - Auth & Dark Mode */}
@@ -232,6 +243,15 @@ export default function Header({
           >
             Patient Portal
           </button>
+           
+{location.pathname === "/doctor-home" && (
+  <button             className={`text-left py-3 px-3 ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-900' : 'hover:bg-gray-50'} font-medium`}
+ onClick={() => navigate("/LiveQueueDashboard")}>
+    Live Queue
+  </button>
+)}
+          
+          {!hideOnPages.includes(location.pathname) && (
           <button
             onClick={() => { setCurrentPage('search'); setShowMobileMenu(false); }}
             className={`text-left py-3 px-3 rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} font-medium`}
@@ -239,7 +259,7 @@ export default function Header({
             <Search className='w-4 h-4 inline mr-2' />
             Find Doctors
           </button>
-
+          )}
           {/* Mobile Auth Section */}
           <div className='mt-4 pt-4 border-t border-dashed'>
             {isAuthenticated ? (

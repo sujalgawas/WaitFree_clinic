@@ -27,6 +27,7 @@ import DoctorProfile from './pages/DoctorProfile';
 import MyAppointments from './pages/MyAppoinments';
 import DoctorSchedule from './pages/DoctorSchedule';
 import BookingTracker from './pages/BookingTracker';
+import LiveQueueDashboard from './pages/LiveQueueDashboard';
 import AboutUs from './pages/About-us';
 import Contact from './pages/Contact';
 import Privacy from './pages/Privacy';
@@ -293,6 +294,12 @@ function MainLayout() {
         <Route path="/doctor-home" element={
           <ProtectedRoute requiredUserType="doctor" requireProfileCompletion={true}>
             <DoctorHome darkMode={darkMode} />
+          </ProtectedRoute>
+        } />
+
+   <Route path="/LiveQueueDashboard" element={
+          <ProtectedRoute requiredUserType="doctor" requireProfileCompletion={true}>
+            <LiveQueueDashboard darkMode={darkMode} />
           </ProtectedRoute>
         } />
 
