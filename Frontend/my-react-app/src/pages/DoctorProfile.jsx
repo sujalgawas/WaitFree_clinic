@@ -70,6 +70,7 @@ export default function DoctorProfile({ darkMode, setBookingData }) {
         label: names[d.getDay()],
         num: d.getDate(),
         full: d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+        iso: d.toISOString().split('T')[0], // YYYY-MM-DD for backend
         date: d,
         isToday: i === 0
       });
@@ -165,7 +166,7 @@ export default function DoctorProfile({ darkMode, setBookingData }) {
       doctorName: doctor?.full_name,
       doctor_uid: doctor?.uid, // Fallback gracefully if name doesn't match
       slot: selectedSlot, 
-      date: days[selectedDay].full, // Use selected day instead of today
+      date: days[selectedDay].iso, // YYYY-MM-DD format for backend
       is_new_patient: patientInfo.visitType === 'New Patient',
       is_emergency: patientInfo.visitType === 'Emergency',
       patientName: patientInfo.name,
@@ -505,10 +506,22 @@ export default function DoctorProfile({ darkMode, setBookingData }) {
               {/* Summary */}
               {selectedSlot && (
                 <div className="bg-blue-50 rounded-lg p-3 mb-4">
+                  <div className="flex justify-between text-xs mb-1"><span className="text-gray-600">Patient</span><span className="font-semibold text-gray-800">{patientInfo.name || '—'}</span></div>
                   <div className="flex justify-between text-xs mb-1"><span className="text-gray-600">Doctor</span><span className="font-semibold text-gray-800">{doctor.full_name}</span></div>
                   <div className="flex justify-between text-xs mb-1"><span className="text-gray-600">Date</span><span className="font-semibold text-gray-800">{days[selectedDay].full}</span></div>
                   <div className="flex justify-between text-xs mb-1"><span className="text-gray-600">Time</span><span className="font-semibold text-gray-800">{selectedSlot}</span></div>
                   <div className="flex justify-between text-xs mb-1"><span className="text-gray-600">Type</span><span className="font-semibold text-gray-800">{patientInfo.visitType}</span></div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-600">Est. Wait Time</span>
+                    <span className="font-semibold text-amber-600 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {(() => {
+                        const slotIndex = [...morningSlotsList, ...eveningSlotsList].indexOf(selectedSlot);
+                        const estimatedMin = Math.max(0, slotIndex * 12);
+                        return estimatedMin <= 5 ? '~5 min (minimal)' : `~${estimatedMin} min`;
+                      })()}
+                    </span>
+                  </div>
                   <div className="flex justify-between text-xs pt-1 mt-1 border-t border-blue-200"><span className="text-gray-600">Total</span><span className="font-bold text-blue-600">₹{doctor.consultation_fee || 800}</span></div>
                 </div>
               )}

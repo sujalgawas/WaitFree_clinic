@@ -208,6 +208,26 @@ def patient_schedule():
         if slot is None:
             return _json_error("No appointment found for this patient on the given date.", 404)
 
+        # ── Compute estimated wait according to priority rules ───────────────
+        # User defined: Estimated Wait = travel_time + wait_time (at clinic)
+        # If the patient is late (now > departure_time), we add the late penalty.
+        travel_time = slot.get("travel_time_min", 0)
+        clinic_wait = slot.get("wait_time_min", 0)
+        estimated_wait_min = travel_time + clinic_wait
+
+        departure_time_str = slot.get("departure_time_str")  # "YYYY-MM-DD HH:MM"
+        if departure_time_str:
+            try:
+                dep_dt = datetime.strptime(departure_time_str, "%Y-%m-%d %H:%M")
+                now = datetime.now()
+                if now > dep_dt:
+                    late_penalty = (now - dep_dt).total_seconds() / 60
+                    estimated_wait_min += late_penalty
+            except ValueError:
+                pass
+
+        slot["estimated_wait_min"] = round(estimated_wait_min, 1)
+
         return jsonify({"success": True, "slot": slot}), 200
 
     except Exception as e:
@@ -226,14 +246,21 @@ def add_to_queue():
 
     Request body (JSON):
     {
-        "token"         : "<firebase_id_token>",
-        "doctor_uid"    : "<uid>",           // preferred — exact Firestore id
-        "doctorName"    : "Dr. Jane Smith",  // alternative — looked up by name
-        "slot"          : "10:00 AM",
-        "date"          : "YYYY-MM-DD",
-        "symptoms"      : "fever and headache",  // optional
-        "is_emergency"  : false,                 // optional
-        "is_new_patient": true                   // optional
+        "token"            : "<firebase_id_token>",
+        "doctor_uid"       : "<uid>",           // preferred — exact Firestore id
+        "doctorName"       : "Dr. Jane Smith",  // alternative — looked up by name
+        "slot"             : "10:00 AM",
+        "date"             : "YYYY-MM-DD",
+        "symptoms"         : "fever and headache",  // optional
+        "is_emergency"     : false,                 // optional
+        "is_new_patient"   : true,                  // optional
+        "patientName"      : "Rahul Sharma",        // from patient form
+        "patientPhone"     : "+91 98765 43210",     // from patient form
+        "patientDob"       : "1995-03-15",          // from patient form
+        "patientGender"    : "Male",                // from patient form
+        "patientBloodGroup": "B+",                  // from patient form
+        "visitType"        : "New Patient",         // from patient form
+        "history"          : "Diabetes"             // from patient form
     }
     """
     data = request.get_json(force=True, silent=True) or {}
@@ -265,24 +292,41 @@ def add_to_queue():
         doctor_uid = doctor_data["uid"]
         display_name = doctor_data.get("full_name") or doctor_name or doctor_uid
 
+        # ── Patient form fields ───────────────────────────────────────────
+        patient_name   = data.get("patientName", "").strip()
+        patient_phone  = data.get("patientPhone", "").strip()
+        patient_dob    = data.get("patientDob", "").strip()
+        patient_gender = data.get("patientGender", "").strip()
+        patient_blood  = data.get("patientBloodGroup", "").strip()
+        visit_type     = data.get("visitType", "").strip()
+        history        = data.get("history", "").strip()
+
         # ── Create appointment ────────────────────────────────────────────
         appointment_data = {
-            "patient_uid":    patient_uid,
-            "doctor_uid":     doctor_uid,
-            "doctor_name":    display_name,
-            "clinic_name":    doctor_data.get("clinic_details", {}).get("name"),
-            "clinic_address": doctor_data.get("clinic_details", {}).get("address"),
-            "slot":           slot,
-            "date":           date_str,
-            "status":         "confirmed",
-            "symptoms":       data.get("symptoms", ""),
-            "is_emergency":   bool(data.get("is_emergency", False)),
-            "is_new_patient": bool(data.get("is_new_patient", True)),
-            "created_at":     firestore.SERVER_TIMESTAMP,
+            "patient_uid":      patient_uid,
+            "doctor_uid":       doctor_uid,
+            "doctor_name":      display_name,
+            "patient_name":     patient_name or None,
+            "patient_phone":    patient_phone or None,
+            "patient_dob":      patient_dob or None,
+            "patient_gender":   patient_gender or None,
+            "patient_blood_group": patient_blood or None,
+            "visit_type":       visit_type or None,
+            "clinic_name":      doctor_data.get("clinic_details", {}).get("name"),
+            "clinic_address":   doctor_data.get("clinic_details", {}).get("address"),
+            "slot":             slot,
+            "date":             date_str,
+            "status":           "confirmed",
+            "symptoms":         data.get("symptoms", ""),
+            "history":          history or None,
+            "is_emergency":     bool(data.get("is_emergency", False)),
+            "is_new_patient":   bool(data.get("is_new_patient", True)),
+            "created_at":       firestore.SERVER_TIMESTAMP,
         }
 
         appt_id = create_appointment(appointment_data)
-        log.info(f"New appointment created: {appt_id} for doctor {doctor_uid}")
+        log.info(f"New appointment created: {appt_id} for doctor {doctor_uid} "
+                 f"(patient: {patient_name or patient_uid})")
 
         # ── Re-optimise queue ─────────────────────────────────────────────
         optimised = queue_manager.build_optimized_queue(

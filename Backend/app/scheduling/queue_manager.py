@@ -125,9 +125,10 @@ def build_optimized_queue(
         user_doc = db.collection("users").document(patient_uid).get()
         user_data = user_doc.to_dict() if user_doc.exists else {}
         patient_name = (
-            user_data.get("full_name")
+            appt.get("patient_name")
+            or user_data.get("full_name")
             or patient_data.get("full_name")
-            or appt.get("patient_name", "Patient")
+            or "Patient"
         )
 
         # Patient location

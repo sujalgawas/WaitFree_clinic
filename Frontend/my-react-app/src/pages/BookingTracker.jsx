@@ -433,7 +433,40 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
                 </div>
                 <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-3 shadow-sm border border-black/5`}>
                    <p className={`text-xs uppercase opacity-70 font-bold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Est. Wait Time</p>
-                   <p className="text-xl font-bold">{scheduleInfo.wait_time_min ? `${Math.round(scheduleInfo.wait_time_min)} min` : 'None'}</p>
+                   <p className="text-xl font-bold">
+                      {(() => {
+                        // Extract number of minutes from Google Maps duration string (e.g. "23 mins" -> 23)
+                        let dynamicTravelMins = 0;
+                        if (duration) {
+                           const match = duration.match(/(\d+)\s*min/i);
+                           if (match) dynamicTravelMins = parseInt(match[1], 10);
+                        }
+                        
+                        // Extract backend values
+                        const backendTravelMins = scheduleInfo.travel_time_min ?? 0;
+                        const clinicWaitMins = scheduleInfo.wait_time_min ?? 0;
+                        const backendEstWait = scheduleInfo.estimated_wait_min ?? 0;
+                        
+                        // Backend computed: est_wait = travel_time + wait_time + late_penalty
+                        // Calculate any late penalty added by the backend
+                        const latePenalty = Math.max(0, backendEstWait - backendTravelMins - clinicWaitMins);
+
+                        // User requested calculation: Travel Time + Consult Time + Buffer Time
+                        const baseTravel = dynamicTravelMins > 0 ? dynamicTravelMins : backendTravelMins;
+                        const consultMins = scheduleInfo.consultation_time_min ?? 15;
+                        const dynamicBuffer = latePenalty > 0 ? latePenalty : 5; // 5 mins base buffer if not late
+                        
+                        let mins = baseTravel + consultMins + clinicWaitMins + dynamicBuffer;
+
+                        if (mins === 0) return <span className="text-green-600">0 min (Any moment!)</span>;
+                        if (mins >= 60) {
+                          const h = Math.floor(mins / 60);
+                          const m = Math.round(mins % 60);
+                          return `${h}h${m > 0 ? ` ${m}m` : ''}`;
+                        }
+                        return `${Math.round(mins)} min`;
+                      })()}
+                   </p>
                 </div>
                 <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-3 shadow-sm border border-black/5`}>
                    <p className={`text-xs uppercase opacity-70 font-bold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Dr. Ready At</p>
