@@ -2,8 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-<<<<<<< HEAD
-import { MapPin, Star, Shield, Briefcase, Calendar, Navigation } from 'lucide-react';
+import { 
+  MapPin, Star, Calendar, Activity, CheckCircle, Clock, Heart, 
+  Award, User, Sun, Moon, Lock, Navigation, Shield, Briefcase 
+} from 'lucide-react';
 import { useLoadScript, GoogleMap, Marker } from '@react-google-maps/api';
 import API_KEYS from '../assets/API_keys.json';
 
@@ -19,12 +21,6 @@ const isValidMapLink = (url) => {
     return false;
   }
 };
-=======
-import { 
-  MapPin, Star, Calendar, Activity, CheckCircle, Clock, Heart, 
-  Award, User, Sun, Moon, Lock, Navigation, Shield, Briefcase 
-} from 'lucide-react';
->>>>>>> friend/main
 
 export default function DoctorProfile({ darkMode, setBookingData }) {
   const { name } = useParams();
@@ -32,10 +28,6 @@ export default function DoctorProfile({ darkMode, setBookingData }) {
   
   const [doctor, setDoctor] = useState(null);  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-<<<<<<< HEAD
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [bookingLoading, setBookingLoading] = useState(false); // New state for booking button
-
   // Google Maps setup
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: API_KEYS.GOOGLE_API_KEY,
@@ -48,8 +40,6 @@ export default function DoctorProfile({ darkMode, setBookingData }) {
     borderRadius: '12px',
     marginTop: '16px'
   };
-=======
->>>>>>> friend/main
   
   // Booking State
   const [selectedDay, setSelectedDay] = useState(0);
@@ -171,40 +161,13 @@ export default function DoctorProfile({ darkMode, setBookingData }) {
     setIsBooking(true);
 
     const bookingPayload = {
-<<<<<<< HEAD
-        token: token,
-        doctorName: doctor?.full_name,
-        doctor_uid: doctor?.uid, // Fallback gracefully if name doesn't match
-        slot: selectedSlot, 
-        date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD
-        is_new_patient: true, // we can default this for now
-        is_emergency: false
-    };
-
-    try {
-        const response = await axios.post('http://127.0.0.1:5000/scheduler/add-to-queue', bookingPayload);
-        
-        if (response.status === 200) {
-            // Update local state for confirmation page (use the optimized AI slot if available)
-            const scheduledSlot = response.data.your_slot;
-            setBookingData(prev => ({
-                ...prev,
-                doctorName: doctor?.full_name,
-                clinic: doctor?.clinic_details?.name,
-                address: doctor?.clinic_details?.address,
-                slot: scheduledSlot ? scheduledSlot.appointment_time_str.split(' ')[1] : selectedSlot,
-                date: bookingPayload.date,
-                fees: doctor?.consultation_fee,
-                predictedDeparture: scheduledSlot?.departure_time_str,
-                queuePosition: scheduledSlot?.queue_position
-            }));
-            
-            navigate('/confirmation');
-=======
       token: token,
       doctorName: doctor?.full_name,
-      slot: selectedSlot,
-      date: days[selectedDay].full,
+      doctor_uid: doctor?.uid, // Fallback gracefully if name doesn't match
+      slot: selectedSlot, 
+      date: days[selectedDay].full, // Use selected day instead of today
+      is_new_patient: patientInfo.visitType === 'New Patient',
+      is_emergency: patientInfo.visitType === 'Emergency',
       patientName: patientInfo.name,
       patientPhone: patientInfo.phone,
       patientDob: patientInfo.dob,
@@ -216,23 +179,26 @@ export default function DoctorProfile({ darkMode, setBookingData }) {
     };
 
     try {
-      const response = await axios.post('http://127.0.0.1:5000/booking', bookingPayload);
+      const response = await axios.post('http://127.0.0.1:5000/scheduler/add-to-queue', bookingPayload);
       
       if (response.status === 200) {
         setBookedSlots(prev => ({ ...prev, [selectedSlot]: true }));
         
+        // Update local state for confirmation page (use the optimized AI slot if available)
+        const scheduledSlot = response.data.your_slot;
         if (setBookingData) {
           setBookingData({
             doctorName: doctor?.full_name,
             clinic: doctor?.clinic_details?.name,
             address: doctor?.clinic_details?.address,
-            slot: selectedSlot,
+            slot: scheduledSlot && scheduledSlot.appointment_time_str ? scheduledSlot.appointment_time_str.split(' ')[1] : selectedSlot,
             date: days[selectedDay].full,
             fees: doctor?.consultation_fee,
+            predictedDeparture: scheduledSlot?.departure_time_str,
+            queuePosition: scheduledSlot?.queue_position,
             patientName: patientInfo.name,
             patientPhone: patientInfo.phone
           });
->>>>>>> friend/main
         }
         
         showToastMessage(`✓ Appointment confirmed for ${days[selectedDay].full} at ${selectedSlot}`);
@@ -322,78 +288,6 @@ export default function DoctorProfile({ darkMode, setBookingData }) {
           </div>
         </div>
 
-<<<<<<< HEAD
-        <div className="grid md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 space-y-6">
-                <div className={`p-6 rounded-2xl shadow-sm ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><MapPin className="text-blue-500"/> Clinic Details</h3>
-                    <p className="font-semibold text-lg">{doctor.clinic_details?.name || "Clinic Name Unavailable"}</p>
-                    <p className="opacity-70 mb-2">{doctor.clinic_details?.address || "Address Unavailable"}</p>
-                    <p className="opacity-70 mb-4">{doctor.clinic_details?.zip_code}</p>
-                    
-                    {/* Render Map if Clinic Location is available */}
-                    {doctor.clinic_details?.location?.lat && doctor.clinic_details?.location?.lng ? (
-                      <div className="mt-4 border border-black/10 rounded-xl overflow-hidden shadow-sm relative">
-                         {isLoaded ? (
-                            <GoogleMap
-                               mapContainerStyle={mapContainerStyle}
-                               center={{ 
-                                   lat: parseFloat(doctor.clinic_details.location.lat), 
-                                   lng: parseFloat(doctor.clinic_details.location.lng) 
-                               }}
-                               zoom={15}
-                               options={{
-                                  styles: darkMode ? [
-                                    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-                                    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-                                    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }
-                                  ] : [],
-                                  disableDefaultUI: true,
-                                  zoomControl: true
-                               }}
-                            >
-                               <Marker 
-                                  position={{ 
-                                      lat: parseFloat(doctor.clinic_details.location.lat), 
-                                      lng: parseFloat(doctor.clinic_details.location.lng) 
-                                  }} 
-                                  icon={{ url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png" }}
-                               />
-                            </GoogleMap>
-                         ) : (
-                           <div className="h-[220px] bg-gray-100 dark:bg-gray-700 flex items-center justify-center rounded-xl mt-4">
-                             <span className="opacity-50">Loading Map...</span>
-                           </div>
-                         )}
-                         {isValidMapLink(doctor.clinic_details?.google_maps_link) && (
-                           <a 
-                             href={doctor.clinic_details.google_maps_link.startsWith('http') ? doctor.clinic_details.google_maps_link : `https://${doctor.clinic_details.google_maps_link}`}
-                             target="_blank"
-                             rel="noopener noreferrer"
-                             className="absolute bottom-3 right-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold shadow hover:scale-105 transition flex items-center gap-1 text-blue-600 dark:text-blue-400"
-                           >
-                             <Navigation size={12} /> View in Maps
-                           </a>
-                         )}
-                      </div>
-                    ) : isValidMapLink(doctor.clinic_details?.google_maps_link) && (
-                       <a 
-                         href={doctor.clinic_details.google_maps_link.startsWith('http') ? doctor.clinic_details.google_maps_link : `https://${doctor.clinic_details.google_maps_link}`}
-                         target="_blank"
-                         rel="noopener noreferrer"
-                         className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition font-medium text-sm"
-                       >
-                         <MapPin size={16} />
-                         Open in Google Maps
-                       </a>
-                    )}
-                </div>
-                <div className={`p-6 rounded-2xl shadow-sm ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                    <h3 className="text-xl font-bold mb-4">About Doctor</h3>
-                    <p className="opacity-80 leading-relaxed">
-                        {doctor.full_name} is a highly skilled {doctor.specialization} with over {doctor.personal_details?.experience_years || 0} years of experience.
-                    </p>
-=======
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-4">
@@ -406,15 +300,73 @@ export default function DoctorProfile({ darkMode, setBookingData }) {
               <div className="font-semibold text-sm mb-0.5">{doctor.clinic_details?.name || "Clinic Name Unavailable"}</div>
               <div className="text-xs text-gray-400 mb-0.5">{doctor.clinic_details?.address || "Address Unavailable"}</div>
               <div className="text-xs text-gray-400 mb-3">{doctor.clinic_details?.zip_code}</div>
-              <div className={`bg-gray-100 rounded-lg h-24 relative flex items-center justify-center overflow-hidden border border-gray-200 ${darkMode ? 'bg-gray-700' : ''}`}>
-                <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_20px,rgba(148,163,184,0.1)_20px,rgba(148,163,184,0.1)_21px),repeating-linear-gradient(90deg,transparent,transparent_20px,rgba(148,163,184,0.1)_20px,rgba(148,163,184,0.1)_21px)]"></div>
-                <div className="flex flex-col items-center z-10">
-                  <Navigation className="w-6 h-6 text-blue-600" />
-                  <span className="text-xs font-medium text-gray-600 bg-white px-2 py-0.5 rounded shadow-sm">Clinic Location</span>
->>>>>>> friend/main
+              
+              {/* Render Map if Clinic Location is available */}
+              {doctor.clinic_details?.location?.lat && doctor.clinic_details?.location?.lng ? (
+                <div className="mt-4 border border-black/10 rounded-xl overflow-hidden shadow-sm relative">
+                   {isLoaded ? (
+                      <GoogleMap
+                         mapContainerStyle={mapContainerStyle}
+                         center={{ 
+                             lat: parseFloat(doctor.clinic_details.location.lat), 
+                             lng: parseFloat(doctor.clinic_details.location.lng) 
+                         }}
+                         zoom={15}
+                         options={{
+                            styles: darkMode ? [
+                              { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+                              { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+                              { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }
+                            ] : [],
+                            disableDefaultUI: true,
+                            zoomControl: true
+                         }}
+                      >
+                         <Marker 
+                            position={{ 
+                                lat: parseFloat(doctor.clinic_details.location.lat), 
+                                lng: parseFloat(doctor.clinic_details.location.lng) 
+                            }} 
+                            icon={{ url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png" }}
+                         />
+                      </GoogleMap>
+                   ) : (
+                     <div className="h-[220px] bg-gray-100 dark:bg-gray-700 flex items-center justify-center rounded-xl mt-4">
+                       <span className="opacity-50">Loading Map...</span>
+                     </div>
+                   )}
+                   {isValidMapLink(doctor.clinic_details?.google_maps_link) && (
+                     <a 
+                       href={doctor.clinic_details.google_maps_link.startsWith('http') ? doctor.clinic_details.google_maps_link : `https://${doctor.clinic_details.google_maps_link}`}
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="absolute bottom-3 right-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold shadow hover:scale-105 transition flex items-center gap-1 text-blue-600 dark:text-blue-400"
+                     >
+                       <Navigation size={12} /> View in Maps
+                     </a>
+                   )}
                 </div>
-              </div>
+              ) : isValidMapLink(doctor.clinic_details?.google_maps_link) ? (
+                 <a 
+                   href={doctor.clinic_details.google_maps_link.startsWith('http') ? doctor.clinic_details.google_maps_link : `https://${doctor.clinic_details.google_maps_link}`}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition font-medium text-sm mt-3"
+                 >
+                   <MapPin size={16} />
+                   Open in Google Maps
+                 </a>
+              ) : (
+                <div className={`bg-gray-100 rounded-lg h-24 relative flex items-center justify-center overflow-hidden border border-gray-200 mt-3 ${darkMode ? 'bg-gray-700' : ''}`}>
+                  <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_20px,rgba(148,163,184,0.1)_20px,rgba(148,163,184,0.1)_21px),repeating-linear-gradient(90deg,transparent,transparent_20px,rgba(148,163,184,0.1)_20px,rgba(148,163,184,0.1)_21px)]"></div>
+                  <div className="flex flex-col items-center z-10">
+                    <Navigation className="w-6 h-6 text-gray-400" />
+                    <span className="text-xs font-medium text-gray-500 bg-white px-2 py-0.5 rounded shadow-sm">Map Not Available</span>
+                  </div>
+                </div>
+              )}
             </div>
+
 
             {/* About Doctor */}
             <div className={`p-5 rounded-xl shadow-sm ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>

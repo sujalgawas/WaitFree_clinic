@@ -64,33 +64,35 @@ export default function Header({
   const baseTextColor = darkMode ? 'text-gray-300' : 'text-gray-700';
   const hoverTextColor = 'hover:text-blue-500';
 
+  const isTransparentAllowed = ['/', '/patient-home', '/doctor-home'].includes(location.pathname);
+
   return (
     
-<header className={`fixed w-full top-0 z-50 transition-all duration-300  dark:bg-gray-900  ${
-      isScrolled
-        ? darkMode ? '  dark:bg-gray-900 bg-gray-900/95 border-gray-800 shadow-xl' : 'bg-white/95 border-gray-200 shadow-lg '
+<header className={`fixed w-full top-0 z-50 transition-all duration-300 ${
+      isScrolled || !isTransparentAllowed
+        ? darkMode ? 'bg-gray-900/95 border-gray-800 shadow-xl' : 'bg-white/95 border-gray-200 shadow-lg'
         : 'bg-transparent border-transparent'
-      } backdrop-blur-md border-b `}>
- <div className="container mx-auto px-4 sm:px-6 lg:px-8  dark:bg-gray-900 ">
-    <div className="flex items-center justify-between h-16  dark:bg-gray-900 ">
+      } backdrop-blur-md border-b`}>
+ <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex items-center justify-between h-16 gap-4 xl:gap-8">
       
       {/* Logo Section - LEFT */}
       <div
         onClick={() => {setCurrentPage('home'); navigate('/');}}
-        className="flex items-center cursor-pointer flex-shrink-0  dark:bg-gray-900 "
+        className="flex items-center cursor-pointer flex-shrink-0"
       >
         <img
           src="/Logo.png"
           alt="WaitFree Clinic"
           className="h-8 w-auto mr-2" 
         />
-      <span className="text-xl font-extrabold tracking-tight whitespace-nowrap text-black dark:text-white">
+      <span className={`text-xl font-extrabold tracking-tight whitespace-nowrap ${darkMode ? 'text-white' : 'text-black'}`}>
   WaitFree<span className="text-blue-600 dark:text-blue-400">Clinic</span>
 </span>
       </div>
 
       {/* Desktop Navigation - CENTER */}
-      <nav className="hidden md:flex items-center justify-center   dark:bg-gray-900  space-x-6 lg:space-x-8 ">
+      <nav className="hidden md:flex items-center justify-center space-x-6 lg:space-x-8">
         <button
           onClick={() => handleScroll("features")}
           className={`${baseTextColor} ${hoverTextColor} font-medium transition-colors duration-200 whitespace-nowrap text-sm lg:text-base`}
@@ -119,7 +121,7 @@ export default function Header({
       </nav>
 
       {/* Right Section - Auth & Dark Mode */}
-      <div className="hidden md:flex items-center space-x-3  dark:bg-gray-900  lg:space-x-4">
+      <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
         {/* Authentication Buttons */}
         {isAuthenticated ? (
           <>
