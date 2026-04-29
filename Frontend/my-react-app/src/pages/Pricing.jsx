@@ -131,7 +131,7 @@ export default function PricingPage({ darkMode, setCurrentPage }) {
 
           {/* Trial Badge */}
           <div className="inline-block bg-green-500/20 border border-green-500 rounded-full px-4 py-2 mb-6">
-            <span className="text-green-400 font-semibold">🎉 14-Day Free Trial • No Credit Card Required</span>
+            <span className="text-green-400 font-semibold"> 14-Day Free Trial • No Credit Card Required</span>
           </div>
 
           {/* Billing Cycle Toggle */}

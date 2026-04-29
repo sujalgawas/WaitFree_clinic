@@ -506,18 +506,19 @@ export default function PatientOnboarding({ darkMode = false }) {
   );
 
   return (
-    <div className={`min-h-screen mt-20 py-8 px-4 transition-colors ${
+    <div className={`min-h-screen flex flex-col transition-colors ${
       darkMode 
         ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
         : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100'
     }`}>
 
-      <div className="max-w-8xl mx-auto">
-
-      <div className="w-full mx-auto">
-        <div className={`rounded-3xl shadow-2xl overflow-hidden ${
-          darkMode ? 'bg-gray-800' : 'bg-white'
-        }`}>
+      {/* 1. Main content wrapper with padding */}
+      <div className="flex-grow mt-20 py-8 px-4"> 
+        <div className="max-w-8xl mx-auto">
+          <div className="w-full mx-auto">
+            <div className={`rounded-3xl shadow-2xl overflow-hidden ${
+              darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
           
           {/* Header */}
           <div className="relative  bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 text-white">
@@ -692,6 +693,7 @@ export default function PatientOnboarding({ darkMode = false }) {
           </div>
         </div>
       </footer>
+    </div>
     </div>
   );
 }

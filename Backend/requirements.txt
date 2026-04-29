@@ -6,4 +6,7 @@ requests
 google-genai
 stripe
 dotenv
+<<<<<<< HEAD
 python-dateutil
+=======
+>>>>>>> friend/main

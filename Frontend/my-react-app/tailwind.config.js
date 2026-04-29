@@ -6,7 +6,13 @@ export default {
   ],
   darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+       fontFamily: {
+        'display': ['Sora', 'sans-serif'],
+        'body': ['DM Sans', 'sans-serif'],
+    },
   },
   plugins: [],
+ 
+}
 }

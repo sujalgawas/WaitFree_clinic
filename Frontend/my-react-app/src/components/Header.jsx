@@ -65,247 +65,238 @@ export default function Header({
   const hoverTextColor = 'hover:text-blue-500';
 
   return (
-    <header className={`fixed w-full top-0 z-50 transition-all duration-300 ${
+    
+<header className={`fixed w-full top-0 z-50 transition-all duration-300  dark:bg-gray-900  ${
       isScrolled
-        ? darkMode ? 'bg-gray-900/95 border-gray-800 shadow-xl' : 'bg-white/95 border-gray-200 shadow-lg'
+        ? darkMode ? '  dark:bg-gray-900 bg-gray-900/95 border-gray-800 shadow-xl' : 'bg-white/95 border-gray-200 shadow-lg '
         : 'bg-transparent border-transparent'
-      } backdrop-blur-md border-b`}>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3"> {/* Adjusted padding */}
-        <div className="flex items-center justify-between h-14"> {/* Fixed height for better alignment */}
-          {/* Logo Section */}
-          <div
-            onClick={() => {setCurrentPage('home'); navigate('/');}}
-            className="flex items-center cursor-pointer flex-shrink-0"
-          >
-            {/* Using a placeholder for the logo image and adjusting the text style */}
-            <img
-              src="/Logo.png" // Assuming this path is correct
-              alt="WaitFree Clinic"
-              className="h-9 w-auto mr-1" 
-            />
-            <span className="text-2xl font-extrabold tracking-tight">
-              WaitFree<span className="text-blue-600">Clinic</span>
-            </span>
-          </div>
+      } backdrop-blur-md border-b `}>
+ <div className="container mx-auto px-4 sm:px-6 lg:px-8  dark:bg-gray-900 ">
+    <div className="flex items-center justify-between h-16  dark:bg-gray-900 ">
+      
+      {/* Logo Section - LEFT */}
+      <div
+        onClick={() => {setCurrentPage('home'); navigate('/');}}
+        className="flex items-center cursor-pointer flex-shrink-0  dark:bg-gray-900 "
+      >
+        <img
+          src="/Logo.png"
+          alt="WaitFree Clinic"
+          className="h-8 w-auto mr-2" 
+        />
+      <span className="text-xl font-extrabold tracking-tight whitespace-nowrap text-black dark:text-white">
+  WaitFree<span className="text-blue-600 dark:text-blue-400">Clinic</span>
+</span>
+      </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <button
-              onClick={() => handleScroll("features")}
-              className={`${baseTextColor} ${hoverTextColor} font-medium transition-colors duration-200`}
-            >
-              Features
-            </button>
-            <button
-              onClick={() => { setCurrentPage('Pricing');  }}
-              className={`${baseTextColor} ${hoverTextColor} font-medium transition-colors duration-200`}
-            >
-              Pricing
-            </button>
-            <button
-              onClick={() => handleScroll("patient-portal")}
-              className={`${baseTextColor} ${hoverTextColor} font-medium transition-colors duration-200`}
-            >
-             Patient Portal
-            </button>
-            <button
-              onClick={() => setCurrentPage('search')}
-              className={`${baseTextColor} ${hoverTextColor} font-medium transition-colors duration-200 flex items-center gap-1`}
-            >
-              <Search className='w-4 h-4' /> Find Doctors
-            </button>
+      {/* Desktop Navigation - CENTER */}
+      <nav className="hidden md:flex items-center justify-center   dark:bg-gray-900  space-x-6 lg:space-x-8 ">
+        <button
+          onClick={() => handleScroll("features")}
+          className={`${baseTextColor} ${hoverTextColor} font-medium transition-colors duration-200 whitespace-nowrap text-sm lg:text-base`}
+        >
+          Features
+        </button>
+        <button
+          onClick={() => { setCurrentPage('Pricing'); }}
+          className={`${baseTextColor} ${hoverTextColor} font-medium transition-colors duration-200 whitespace-nowrap text-sm lg:text-base`}
+        >
+          Pricing
+        </button>
+        <button
+          onClick={() => handleScroll("patient-portal")}
+          className={`${baseTextColor} ${hoverTextColor} font-medium transition-colors duration-200 whitespace-nowrap text-sm lg:text-base`}
+        >
+          Patient Portal
+        </button>
+        <button
+          onClick={() => setCurrentPage('search')}
+          className={`${baseTextColor} ${hoverTextColor} font-medium transition-colors duration-200 flex items-center gap-2 whitespace-nowrap text-sm lg:text-base`}
+        >
+          <Search className='w-4 h-4' />
+          Find Doctors
+        </button>
+      </nav>
 
-            {/* Authentication and User Buttons */}
-            {isAuthenticated ? (
-              
-              <div className="flex items-center space-x-3 ml-4">
-                {/* User Info Dropdown Placeholder/Button */}
-                {userType === 'patient' && (
-                    <button
-                      onClick={() => navigate('/my-appointments')}
-                      className={`hover:text-blue-600 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                    >
-                      My Appointments
-                    </button>
-                  )}
-
-                  {/* Doctor Schedule: Only for Doctors */}
-                  {userType === 'doctor' && (
-                    <button
-                      onClick={() => navigate('/doctor-schedule')}
-                      className={`hover:text-blue-600 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                    >
-                      My Schedule
-                    </button>
-                  )}
-                <button
-                  onClick={() => navigate(userType === 'doctor' ? '/doctor-home' : '/dashboard')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-colors ${
-                    darkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                  }`}
-                > 
-
-                  <User className="w-5 h-5" />
-                  <span className="text-sm">
-                    {userType === 'doctor' ? 'Dr. Dashboard' : 'My Dashboard'}
-                  </span>
-                </button>
-                
-                {/* Logout Button */}
-                <button
-                  onClick={handleLogout}
-                  className="p-2.5 rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors shadow-md"
-                  title="Logout"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
-              </div>
-            ) : (
-             <button
-  onClick={() => navigate('/login')}
-  className="
-    flex items-center justify-center gap-2
-    py-2  w--32 px-2
-    rounded-xl
-    text-white font-semibold
-
-    bg-gradient-to-r from-blue-600 to-purple-600
-    hover:from-blue-700 hover:to-purple-700
-
-    transition-all duration-300
-  "
->
-  <LogIn className="w-5 h-5" />
-  Login / Register
-</button>
+      {/* Right Section - Auth & Dark Mode */}
+      <div className="hidden md:flex items-center space-x-3  dark:bg-gray-900  lg:space-x-4">
+        {/* Authentication Buttons */}
+        {isAuthenticated ? (
+          <>
+            {userType === 'patient' && (
+              <button
+                onClick={() => navigate('/my-appointments')}
+                className={`${darkMode ? 'text-gray-300 hover:text-blue-400' : 'text-gray-700 hover:text-blue-600'} transition-colors whitespace-nowrap text-sm font-medium`}
+              >
+                My Appointments
+              </button>
             )}
 
-            {/* Dark Mode Toggle */}
+            {userType === 'doctor' && (
+              <button
+                onClick={() => navigate('/doctor-schedule')}
+                className={`${darkMode ? 'text-gray-300 hover:text-blue-400' : 'text-gray-700 hover:text-blue-600'} transition-colors whitespace-nowrap text-sm font-medium`}
+              >
+                My Schedule
+              </button>
+            )}
+            
             <button
-              onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                darkMode ? 'bg-gray-800 text-yellow-400 hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              onClick={() => navigate(userType === 'doctor' ? '/doctor-home' : '/dashboard')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all duration-200 text-sm ${
+                darkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
               }`}
-              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
-            </button>
-          </nav>
-
-          {/* Mobile Menu Button (always visible on mobile) */}
-          <div className='md:hidden flex items-center gap-2'>
-            {/* Mobile Dark Mode Toggle */}
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-full transition-colors ${
-                darkMode ? 'bg-gray-800 text-yellow-400' : 'bg-gray-100 text-gray-600'
-              }`}
-              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+            > 
+              <User className="w-4 h-4" />
+              <span className="whitespace-nowrap">
+                {userType === 'doctor' ? 'Dashboard' : 'Dashboard'}
+              </span>
             </button>
             
-            {/* Mobile Menu Icon */}
             <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className={`p-2 rounded-lg transition-colors ${
-                darkMode ? 'text-white hover:bg-gray-800' : 'text-gray-800 hover:bg-gray-100'
-              }`}
+              onClick={handleLogout}
+              className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+              title="Logout"
             >
-              {showMobileMenu ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
+              <LogOut className="w-4 h-4" />
             </button>
-          </div>
-        </div>
+          </>
+        ) : (
+          <button
+            onClick={() => navigate('/login')}
+            className="flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-white font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 text-sm"
+          >
+            <LogIn className="w-4 h-4" />
+            Login / Register
+          </button>
+        )}
 
-        {/* Mobile Menu (Dropdown) */}
-        {showMobileMenu && (
-          <div className={`md:hidden mt-4 pt-4 border-t ${darkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-            <nav className="flex flex-col gap-3 font-medium">
-              <button
-                onClick={() => { navigate('/'); handleScroll('home'); }}
-                className={`text-left py-2 px-2 rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}
-              >
-                Home
-              </button>
-              <button
-                onClick={() => { handleScroll("features"); }}
-                className={`text-left py-2 px-2 rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}
-              >
-                Features
-              </button>
-             
-              <button
-                onClick={() => { handleScroll("patient-portal"); }}
-                className={`text-left py-2 px-2 rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}
-              >
-                Patient Portal
-              </button>
-              <button
-                onClick={() => { setCurrentPage('search'); setShowMobileMenu(false); }}
-                className={`text-left py-2 px-2 rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}
-              >
-                Find Doctors
-              </button>
+        {/* Dark Mode Toggle */}
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className={`p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+            darkMode ? 'bg-gray-800 text-yellow-400 hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+          title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </button>
+      </div>
 
-              {/* Mobile Auth Links */}
-              <div className='mt-2 pt-4 border-t border-dashed'>
-                {isAuthenticated ? (
-                  <>
-                    <div className={`flex items-center justify-between py-2 px-2 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                      <div className="flex items-center gap-2 font-semibold">
-                        <User className="w-5 h-5 text-blue-500" />
-                        <span>{user?.name || user?.username}</span>
-                      </div>
-                      <span className='text-xs text-gray-500 font-normal capitalize'>{userType}</span>
-                    </div>
+      {/* Mobile Menu Button */}
+      <div className='md:hidden flex items-center gap-2'>
+        {/* Mobile Dark Mode Toggle */}
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className={`p-2 rounded-lg transition-colors ${
+            darkMode ? 'bg-gray-800 text-yellow-400' : 'bg-gray-100 text-gray-600'
+          }`}
+          title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </button>
+        
+        {/* Mobile Menu Icon */}
+        <button
+          onClick={() => setShowMobileMenu(!showMobileMenu)}
+          className={`p-2 rounded-lg transition-colors ${
+            darkMode ? 'text-white hover:bg-gray-800' : 'text-gray-800 hover:bg-gray-100'
+          }`}
+        >
+          {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+    </div>
 
-                    <button
-                      onClick={() => { navigate(userType === 'doctor' ? '/doctor-home' : '/dashboard'); setShowMobileMenu(false); }}
-                      className={`text-left py-2 px-2 w-full rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}
-                    >
-                      Dashboard
-                    </button>
+    {/* Mobile Menu Dropdown */}
+    {showMobileMenu && (
+      <div className={`md:hidden mt-4 pt-4 border-t ${darkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+        <nav className="flex flex-col gap-2 pb-4">
+          <button
+            onClick={() => { handleScroll("features"); setShowMobileMenu(false); }}
+            className={`text-left py-3 px-3 rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} font-medium`}
+          >
+            Features
+          </button>
+          <button
+            onClick={() => { setCurrentPage('Pricing'); setShowMobileMenu(false); }}
+            className={`text-left py-3 px-3 rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} font-medium`}
+          >
+            Pricing
+          </button>
+          <button
+            onClick={() => { handleScroll("patient-portal"); setShowMobileMenu(false); }}
+            className={`text-left py-3 px-3 rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} font-medium`}
+          >
+            Patient Portal
+          </button>
+          <button
+            onClick={() => { setCurrentPage('search'); setShowMobileMenu(false); }}
+            className={`text-left py-3 px-3 rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} font-medium`}
+          >
+            <Search className='w-4 h-4 inline mr-2' />
+            Find Doctors
+          </button>
 
-                    {userType === 'patient' && (
-                      <button
-                        onClick={() => {navigate('/my-appointments');setShowMobileMenu(false);}}
-                        className={`text-left py-2 px-2 w-full rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}
-                      >
-                        <Calendar className='w-4 h-4 inline-block mr-2'/> My Appointments
-                      </button>
-                    )}
+          {/* Mobile Auth Section */}
+          <div className='mt-4 pt-4 border-t border-dashed'>
+            {isAuthenticated ? (
+              <>
+                <div className={`flex items-center justify-between py-3 px-3 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-100'} mb-2`}>
+                  <div className="flex items-center gap-2 font-semibold">
+                    <User className="w-5 h-5 text-blue-500" />
+                    <span className="text-sm">{user?.name || user?.username}</span>
+                  </div>
+                  <span className='text-xs text-gray-500 font-normal capitalize'>{userType}</span>
+                </div>
 
-                    {userType === 'doctor' && (
-                      <button
-                        onClick={() => {navigate('/doctor-schedule');setShowMobileMenu(false);}}
-                        className={`text-left py-2 px-2 w-full rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}
-                      >
-                        My Schedule
-                      </button>
-                    )}
-                    
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-3 py-3 px-2 w-full text-red-600 hover:text-red-700 font-bold mt-2 border-t border-gray-200/50"
-                    >
-                      <LogOut className="w-5 h-5" />
-                      Logout
-                    </button>
-                  </>
-                ) : (
+                <button
+                  onClick={() => { navigate(userType === 'doctor' ? '/doctor-home' : '/dashboard'); setShowMobileMenu(false); }}
+                  className={`text-left py-3 px-3 w-full rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} font-medium`}
+                >
+                  Dashboard
+                </button>
+
+                {userType === 'patient' && (
                   <button
-                    onClick={() => { setCurrentPage('login'); setShowMobileMenu(false); }}
-                    className={`flex items-center justify-center gap-2 py-3 w-full rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors mt-2`}
+                    onClick={() => {navigate('/my-appointments'); setShowMobileMenu(false);}}
+                    className={`text-left py-3 px-3 w-full rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} font-medium`}
                   >
-                    <LogIn className="w-5 h-5" />
-                    Login / Register
+                    <Calendar className='w-4 h-4 inline-block mr-2'/> My Appointments
                   </button>
                 )}
-              </div>
-            </nav>
+
+                {userType === 'doctor' && (
+                  <button
+                    onClick={() => {navigate('/doctor-schedule'); setShowMobileMenu(false);}}
+                    className={`text-left py-3 px-3 w-full rounded-lg ${baseTextColor} ${hoverTextColor} ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} font-medium`}
+                  >
+                    My Schedule
+                  </button>
+                )}
+                
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 py-3 px-3 w-full text-red-600 hover:text-red-700 font-semibold mt-2"
+                >
+                  <LogOut className="w-5 h-5" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => { setCurrentPage('login'); setShowMobileMenu(false); }}
+                className="flex items-center justify-center gap-2 py-3 w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+              >
+                <LogIn className="w-5 h-5" />
+                Login / Register
+              </button>
+            )}
           </div>
-        )}
+        </nav>
       </div>
+    )}
+  </div>
     </header>
   );
 }

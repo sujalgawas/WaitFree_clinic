@@ -114,55 +114,7 @@ const LandingPage = ({ darkMode }) => {
 
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-white'} transition-colors duration-300`}>
 
-      {/* Navigation */}
-      {/* <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        isScrolled 
-          ? darkMode 
-            ? 'bg-gray-900/95 backdrop-blur-lg border-b border-gray-800' 
-            : 'bg-white/95 backdrop-blur-lg border-b border-gray-200'
-          : 'bg-transparent'
-      }`}>
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-lg ${darkMode ? 'bg-blue-600' : 'bg-blue-500'}`}>
-                <Calendar className="w-6 h-6 text-white" />
-              </div>
-              <span className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                WaitFree<span className="text-blue-500">Clinic</span>
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-6">
-              <a href="#features" className={`font-medium ${darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-                Features
-              </a>
-              <a href="#testimonials" className={`font-medium ${darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-                Testimonials
-              </a>
-              <a href="#pricing" className={`font-medium ${darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-                Pricing
-              </a>
-              <button
-                onClick={() => navigate('/patient-login')}
-                className={`font-medium ${darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
-              >
-                Patient Portal
-              </button>
-              <button
-                onClick={() => navigate('/doctor-login')}
-                className={`px-6 py-2 rounded-lg font-semibold transition-all ${
-                  darkMode 
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                    : 'bg-blue-500 hover:bg-blue-600 text-white'
-                }`}
-              >
-                Doctor Login
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav> */}
+ 
 
       {/* Hero Section */}
       <section className={`pt-32 pb-20 px-6 relative overflow-hidden ${darkMode
@@ -244,7 +196,7 @@ const LandingPage = ({ darkMode }) => {
                   </div>
                 </div>
                 <div className="p-6">
-                  <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="grid grid-cols-2 gap-4 mb-6 dark:text-white">
                     <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
                       <div className="text-sm opacity-70">Today's Appointments</div>
                       <div className="text-2xl font-bold">24</div>
@@ -363,18 +315,18 @@ const LandingPage = ({ darkMode }) => {
         </div>
       </section>
       {/* Problem Statement*/}
-      <section className="py-24 px-6 bg-gray-50">
+      <section className={`${darkMode ? 'bg-gray-900' : 'bg-gray-50'} py-24 px-6 bg-gray-50 dark:bg-gray-900`}>
         <div className="max-w-6xl mx-auto text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-6" />
-          <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-12">
+          <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-12 dark:text-white">
             Healthcare Shouldn't Be This Hard
           </h2>
           <div className="grid md:grid-cols-3 gap-8 text-left">
-            <div className="bg-white p-8 rounded-2xl shadow-xl border border-red-100">
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border dark:border-gray-900 border-red-100">
               <div className="font-extrabold text-red-600 text-xl mb-4 flex items-center gap-2">
                 <Users className="w-6 h-6" /> For Patients
               </div>
-              <ul className="space-y-3 text-gray-700">                <li className="flex items-start gap-3">
+              <ul className="space-y-3 dark:text-white text-gray-700">                <li className="flex items-start gap-3">
                 <span className="text-2xl text-red-500">❌</span>
                 <span>Hours wasted in agonizing waiting rooms</span>              </li>
                 <li className="flex items-start gap-3">
@@ -389,11 +341,11 @@ const LandingPage = ({ darkMode }) => {
                   <span>No idea when you'll actually see the doctor</span>
                 </li>
               </ul>            </div>
-            <div className="bg-white p-8 rounded-2xl shadow-xl border border-red-100">
+            <div className="bg-white p-8 dark:bg-gray-800 rounded-2xl shadow-xl border  dark:border-gray-900 border-red-100">
               <div className="font-extrabold text-red-600 text-xl mb-4 flex items-center gap-2">
                 <Stethoscope className="w-6 h-6" /> For Doctors
               </div>
-              <ul className="space-y-3 text-gray-700">                <li className="flex items-start gap-3">
+              <ul className="space-y-3 dark:text-white text-gray-700">                <li className="flex items-start gap-3">
                 <span className="text-2xl text-red-500">❌</span>
                 <span>Constant phone and admin interruptions</span>
               </li>
@@ -501,7 +453,7 @@ const LandingPage = ({ darkMode }) => {
             </div>
             <div>
               <h4 className="font-extrabold mb-4 text-blue-400 border-b border-blue-400/30 pb-1">Company</h4>
-              <ul className="space-y-3">
+              <ul className="space-y-3"> 
                 <li><a href="/About-us" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
                 <li><a href="Contact" className="text-gray-400 hover:text-white transition-colors">Contact Us</a></li>
                 <li><a href="/Privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>

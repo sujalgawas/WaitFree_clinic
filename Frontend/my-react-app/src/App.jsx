@@ -227,6 +227,7 @@ function MainLayout() {
         <Route path="/patient-login" element={<PatientLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/doctor-login" element={<DoctorLogin darkMode={darkMode} setIsLoggedIn={setIsLoggedIn} setUserType={setUserType} />} />
         <Route path="/Pricing" element={<Pricing darkMode={darkMode} />} />
+      
         <Route path="/About-us" element={<AboutUs darkMode={darkMode} />} />
          <Route path="/Contact" element={<Contact darkMode={darkMode} />} />
           <Route path="/Privacy" element={<Privacy darkMode={darkMode} />} />
