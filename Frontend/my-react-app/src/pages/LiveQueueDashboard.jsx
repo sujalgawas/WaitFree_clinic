@@ -12,27 +12,34 @@ import {
   ChevronRight,
   ChevronLeft
 } from 'lucide-react';
+import axios from 'axios';
 
-// Mock API service
+// API service
+const API_BASE = 'http://127.0.0.1:5000/doctor/queue';
+const getHeaders = () => ({
+  headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+});
+
 const api = {
-  getQueue: () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          { id: 1, token: 'A001', name: 'John Doe', age: 45, symptoms: 'Chest pain, shortness of breath', arrivalTime: '09:15', status: 'Waiting', riskLevel: 'High', waitTime: 25 },
-          { id: 2, token: 'A002', name: 'Sarah Smith', age: 32, symptoms: 'Severe headache, dizziness', arrivalTime: '09:30', status: 'Waiting', riskLevel: 'Medium', waitTime: 15 },
-          { id: 3, token: 'A003', name: 'Mike Johnson', age: 58, symptoms: 'Fever, cough, body ache', arrivalTime: '09:45', status: 'Waiting', riskLevel: 'Medium', waitTime: 10 },
-          { id: 4, token: 'A004', name: 'Emily Brown', age: 28, symptoms: 'Abdominal pain, nausea', arrivalTime: '10:00', status: 'Waiting', riskLevel: 'Low', waitTime: 5 },
-          { id: 5, token: 'A005', name: 'David Wilson', age: 67, symptoms: 'Joint pain, fatigue', arrivalTime: '10:15', status: 'Waiting', riskLevel: 'Low', waitTime: 0 },
-        ]);
-      }, 500);
-    });
+  getQueue: async () => {
+    const res = await axios.get(API_BASE, getHeaders());
+    return res.data;
   },
-  callNext: () => Promise.resolve(),
-  markDone: () => Promise.resolve(),
-  addPatient: (patient) => Promise.resolve(patient),
-  skipPatient: () => Promise.resolve(),
+  callNext: async (id) => {
+    await axios.post(`${API_BASE}/call-next`, { appointment_id: id }, getHeaders());
+  },
+  markDone: async (id) => {
+    await axios.post(`${API_BASE}/mark-done`, { appointment_id: id }, getHeaders());
+  },
+  addPatient: async (patient) => {
+    const res = await axios.post(`${API_BASE}/add`, patient, getHeaders());
+    return res.data;
+  },
+  skipPatient: async (id) => {
+    await axios.post(`${API_BASE}/skip`, { appointment_id: id }, getHeaders());
+  },
 };
+
 
 const LiveQueueDashboard =({ darkMode }) => {
   const [queue, setQueue] = useState([]);
@@ -64,12 +71,24 @@ const LiveQueueDashboard =({ darkMode }) => {
     setIsLoading(true);
     try {
       const data = await api.getQueue();
-      setQueue(data);
-      if (data.length > 0) {
-        setCurrentPatient(data[0]);
-        setNextPatients(data.slice(1, 4));
+      const queueData = data.queue || [];
+      setQueue(queueData);
+      
+      const inProgress = queueData.find(p => p.status === 'In Progress');
+      const waiting = queueData.filter(p => p.status === 'Waiting');
+      
+      if (inProgress) {
+        setCurrentPatient(inProgress);
+        setNextPatients(waiting.slice(0, 3));
+      } else if (waiting.length > 0) {
+        setCurrentPatient(null); // No one is being served yet
+        setNextPatients(waiting.slice(0, 3));
+      } else {
+        setCurrentPatient(null);
+        setNextPatients([]);
       }
-      setCompletedCount(Math.floor(Math.random() * 50) + 20); // Mock completed patients
+      
+      setCompletedCount(data.completedCount || 0);
       playNotification();
     } catch (error) {
       console.error('Error loading queue:', error);
@@ -85,98 +104,52 @@ const LiveQueueDashboard =({ darkMode }) => {
   };
 
   const handleCallNext = async () => {
-    if (currentPatient) {
-      // Move current to in-progress temporarily
-      const updatedQueue = queue.map(p => 
-        p.id === currentPatient.id ? { ...p, status: 'In Progress' } : p
-      );
-      setQueue(updatedQueue);
-      setCurrentPatient({ ...currentPatient, status: 'In Progress' });
-      
+    const nextPatient = nextPatients.length > 0 ? nextPatients[0] : null;
+    let targetPatient = currentPatient || nextPatient;
+    
+    if (targetPatient) {
       // Simulate API call
-      await api.callNext();
+      await api.callNext(targetPatient.id);
       
       // Move to next patient
-      if (nextPatients.length > 0) {
-        const nextPatient = nextPatients[0];
-        setCurrentPatient(nextPatient);
+      if (currentPatient && nextPatients.length > 0) {
+        const next = nextPatients[0];
+        setCurrentPatient({ ...next, status: 'In Progress' });
         setNextPatients(nextPatients.slice(1));
-        
-        // Update queue
-        const newQueue = updatedQueue.map(p => 
-          p.id === nextPatient.id ? { ...p, status: 'In Progress' } : p
-        );
-        setQueue(newQueue);
-      } else {
-        setCurrentPatient(null);
-        setNextPatients([]);
+      } else if (!currentPatient && nextPatient) {
+        setCurrentPatient({ ...nextPatient, status: 'In Progress' });
+        setNextPatients(nextPatients.slice(1));
       }
+
+      await loadQueue(); // reload fully from backend
     }
   };
 
   const handleMarkDone = async () => {
     if (currentPatient) {
-      await api.markDone();
-      setCompletedCount(prev => prev + 1);
-      
-      // Remove current patient from queue
-      const updatedQueue = queue.filter(p => p.id !== currentPatient.id);
-      setQueue(updatedQueue);
-      
-      // Auto call next
-      if (nextPatients.length > 0) {
-        const nextPatient = nextPatients[0];
-        setCurrentPatient(nextPatient);
-        setNextPatients(nextPatients.slice(1));
-      } else {
-        setCurrentPatient(null);
-        setNextPatients([]);
-      }
+      await api.markDone(currentPatient.id);
+      await loadQueue();
     }
   };
 
   const handleSkipPatient = async () => {
     if (currentPatient) {
-      // Move current patient to the end of queue
-      const updatedQueue = queue.filter(p => p.id !== currentPatient.id);
-      const skippedPatient = { ...currentPatient, status: 'Waiting', waitTime: 0 };
-      const newQueue = [...updatedQueue, skippedPatient];
-      setQueue(newQueue);
-      
-      // Set next patient as current
-      if (nextPatients.length > 0) {
-        const nextPatient = nextPatients[0];
-        setCurrentPatient(nextPatient);
-        setNextPatients([...nextPatients.slice(1), skippedPatient]);
-      } else {
-        setCurrentPatient(skippedPatient);
-        setNextPatients([]);
-      }
-      
-      await api.skipPatient();
+      await api.skipPatient(currentPatient.id);
+      await loadQueue();
     }
   };
 
   const handleEmergencyAdd = async () => {
     const newPatient = {
-      id: Date.now(),
-      token: `E${String(Date.now()).slice(-4)}`,
       name: emergencyPatient.name,
-      age: parseInt(emergencyPatient.age),
+      age: emergencyPatient.age,
       symptoms: emergencyPatient.symptoms,
-      arrivalTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      status: 'Waiting',
       riskLevel: emergencyPatient.riskLevel,
-      waitTime: 0
     };
     
-    // Add to front of queue
-    const updatedQueue = [newPatient, ...queue];
-    setQueue(updatedQueue);
-    setCurrentPatient(newPatient);
-    setNextPatients(updatedQueue.slice(1, 4));
-    
     await api.addPatient(newPatient);
+    await loadQueue();
+    
     setShowEmergencyModal(false);
     playNotification();
     setEmergencyPatient({ name: '', age: '', symptoms: '', riskLevel: 'High' });
