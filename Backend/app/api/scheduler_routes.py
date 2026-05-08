@@ -186,6 +186,7 @@ def patient_schedule():
     doctor_uid = data.get("doctor_uid")
     doctor_name = data.get("doctor_name")
     date_str = data.get("date")
+    appointment_id = data.get("appointment_id")
 
     if not date_str:
         return _json_error("'date' field is required")
@@ -204,6 +205,7 @@ def patient_schedule():
             doctor_uid=doctor_uid,
             date_str=date_str,
             patient_uid=patient_uid,
+            appointment_id=appointment_id,
         )
         if slot is None:
             return _json_error("No appointment found for this patient on the given date.", 404)

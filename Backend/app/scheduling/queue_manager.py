@@ -235,12 +235,19 @@ def get_patient_slot(
     doctor_uid: str,
     date_str: str,
     patient_uid: str,
+    appointment_id: str | None = None,
 ) -> dict[str, Any] | None:
     """
     Return the scheduled slot for a specific patient within an optimised queue.
     Returns None if no appointment is found for this patient on the given date.
     """
     result = build_optimized_queue(doctor_uid, date_str)
+    
+    if appointment_id:
+        for entry in result.get("schedule", []):
+            if entry.get("appointment_id") == appointment_id:
+                return entry
+
     for entry in result.get("schedule", []):
         if entry["patient_uid"] == patient_uid:
             return entry

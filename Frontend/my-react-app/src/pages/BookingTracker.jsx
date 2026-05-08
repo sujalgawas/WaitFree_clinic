@@ -94,7 +94,8 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
         token: token,
         doctor_uid: appointment.doctor_uid,
         doctor_name: appointment.doctor_name,
-        date: appointment.date
+        date: appointment.date,
+        appointment_id: appointment.id
       });
       if (response.data.success && response.data.slot) {
         setScheduleInfo(response.data.slot);
