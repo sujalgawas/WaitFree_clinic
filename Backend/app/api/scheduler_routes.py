@@ -208,6 +208,24 @@ def patient_schedule():
             appointment_id=appointment_id,
         )
         if slot is None:
+            # Check if it was filtered out because it is done/skipped
+            if appointment_id:
+                from app.crud.appointments_crud import get_appointment_by_id
+                appt_doc = get_appointment_by_id(appointment_id)
+                if appt_doc and appt_doc.exists:
+                    appt_data = appt_doc.to_dict()
+                    status = appt_data.get("status", "confirmed").lower()
+                    if status in ["done", "skipped", "cancelled", "completed"]:
+                        return jsonify({
+                            "success": True, 
+                            "slot": {
+                                "status": status.capitalize(), 
+                                "queue_position": "-", 
+                                "estimated_wait_min": 0, 
+                                "appointment_time_str": appt_data.get("slot", ""),
+                                "scheduling_note": f"Appointment is {status}."
+                            }
+                        }), 200
             return _json_error("No appointment found for this patient on the given date.", 404)
 
         # ── Compute estimated wait according to priority rules ───────────────

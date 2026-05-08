@@ -115,6 +115,11 @@ def build_optimized_queue(
     for appt_doc in appt_docs:
         appt = appt_doc.to_dict()
         appt_id = appt_doc.id
+
+        status = appt.get("status", "confirmed").lower()
+        if status in ["done", "skipped", "cancelled", "completed"]:
+            continue
+
         patient_uid = appt.get("patient_uid", "")
 
         # Fetch patient profile

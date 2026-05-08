@@ -312,21 +312,21 @@ const LiveQueueDashboard =({ darkMode }) => {
                   className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
                 >
                   <Phone className="w-4 h-4" />
-                  Call Next
+                  Processing
                 </button>
                 <button
                   onClick={handleMarkDone}
                   className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
                 >
                   <CheckCircle className="w-4 h-4" />
-                  Mark as Done
+                  Done
                 </button>
                 <button
                   onClick={handleSkipPatient}
                   className="flex items-center gap-2 px-6 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
                 >
                   <SkipForward className="w-4 h-4" />
-                  Skip Patient
+                  Cancel
                 </button>
                 <button
                   onClick={() => setShowEmergencyModal(true)}
@@ -338,10 +338,33 @@ const LiveQueueDashboard =({ darkMode }) => {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-lg p-8 text-center mb-6">
+            <div className="bg-white rounded-xl shadow-lg p-8 text-center mb-6 dark:bg-gray-800">
               <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <h3 className="text-lg font-semibold text-gray-600">No Patients in Queue</h3>
-              <p className="text-gray-400">Waiting for new patients to arrive</p>
+              <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-300">
+                {nextPatients.length > 0 ? "Ready to Start" : "No Patients in Queue"}
+              </h3>
+              <p className="text-gray-400 mb-6">
+                {nextPatients.length > 0 ? "Call the first patient to begin." : "Waiting for new patients to arrive."}
+              </p>
+              
+              <div className="flex flex-wrap justify-center gap-3">
+                {nextPatients.length > 0 && (
+                  <button
+                    onClick={handleCallNext}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
+                  >
+                    <Phone className="w-4 h-4" />
+                    Processing
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowEmergencyModal(true)}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  Emergency Add
+                </button>
+              </div>
             </div>
           )}
 
