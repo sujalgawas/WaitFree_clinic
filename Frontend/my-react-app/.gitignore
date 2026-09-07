@@ -13,9 +13,6 @@ dist
 dist-ssr
 *.local
 
-#private files 
-src/assets/firebaseConfig.json
-src/assets/API_keys.json
 
 # Editor directories and files
 .vscode/*

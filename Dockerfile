@@ -10,6 +10,12 @@ RUN npm install
 
 # Copy source and build static bundle
 COPY Frontend/my-react-app/ ./
+
+# Ensure assets directory and fallback JSON files exist
+RUN mkdir -p src/assets && \
+    if [ ! -f src/assets/API_keys.json ]; then echo '{"GOOGLE_API_KEY":""}' > src/assets/API_keys.json; fi && \
+    if [ ! -f src/assets/firebaseConfig.json ]; then echo '{}' > src/assets/firebaseConfig.json; fi
+
 RUN npm run build
 
 # ==========================================
