@@ -3,6 +3,7 @@ import { Zap, Search as SearchIcon, Shield, Video, Star, MapPin, Clock, MessageC
 import { AuthContext } from '../contexts/auth';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api';
 
 // Fallback data
 import { mockDoctors as fallbackDoctors, specialties } from '../data'; 
@@ -24,7 +25,7 @@ export default function PatientHome({ darkMode, searchQuery, setSearchQuery, set
            city = JSON.parse(savedLocation).city;
         }
 
-        const response = await axios.post('http://127.0.0.1:5000/search', {
+        const response = await axios.post(`${API_BASE_URL}/search`, {
           query: '', // Empty query gets top doctors
           location: { city: city }
         });

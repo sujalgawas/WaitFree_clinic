@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Star, Zap, Heart, IndianRupee, Users, MapPin, Clock, Brain, AlertCircle, Loader } from 'lucide-react';
+import { API_BASE_URL } from '../config/api';
 
 export default function PricingPage({ darkMode, setCurrentPage }) {
   const [billingCycle, setBillingCycle] = useState('monthly');
@@ -79,9 +80,6 @@ export default function PricingPage({ darkMode, setCurrentPage }) {
   setLoading(true);
 
   const token = localStorage.getItem('token');
-  
-  // Use a constant for the API URL
-  const API_BASE_URL = 'http://127.0.0.1:5000'; 
 
   try {
     const response = await fetch(`${API_BASE_URL}/create-checkout-session`, {

@@ -5,6 +5,7 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, se
 import axios from "axios";
 import { AuthContext } from '../contexts/auth';
 import firebaseConfig from '../assets/firebaseConfig.json';
+import { API_BASE_URL } from '../config/api';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -31,7 +32,7 @@ export default function PatientLogin({ darkMode }) {
   const [validationErrors, setValidationErrors] = useState({});
   const [touched, setTouched] = useState({});
   
-  const BACKEND_URL = 'http://127.0.0.1:5000';
+  const BACKEND_URL = API_BASE_URL;
 
   useEffect(() => {
     const errors = {};

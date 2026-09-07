@@ -5,6 +5,7 @@ import {
   Headphones, FileText, AlertCircle, ArrowRight, 
   Sparkles, Shield
 } from 'lucide-react';
+import { API_BASE_URL } from '../config/api';
 
 const ContactUs = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -130,7 +131,7 @@ const ContactUs = () => {
     try {
       console.log('Submitting form:', formData);
 
-      const response = await fetch('http://localhost:5000/contact-us', { // FIXED URL
+      const response = await fetch(`${API_BASE_URL}/contact-us`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

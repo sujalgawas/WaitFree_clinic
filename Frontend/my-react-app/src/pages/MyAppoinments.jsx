@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 import { 
   Calendar, 
   Clock, 
@@ -29,7 +30,7 @@ export default function MyAppointments({ darkMode }) {
       }
 
       try {
-        const response = await axios.post('http://127.0.0.1:5000/get-user-appointments', {
+        const response = await axios.post(`${API_BASE_URL}/get-user-appointments`, {
           token: token
         });
         setAppointments(response.data.appointments || []);

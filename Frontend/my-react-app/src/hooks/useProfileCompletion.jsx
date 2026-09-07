@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
 export const useProfileCompletion = () => {
   const [profileCompleted, setProfileCompleted] = useState(null);
@@ -17,7 +18,7 @@ export const useProfileCompletion = () => {
       }
 
       try {
-        const response = await axios.post('http://127.0.0.1:5000/check-profile', {
+        const response = await axios.post(`${API_BASE_URL}/check-profile`, {
           token: token,
           user_type: userType
         });

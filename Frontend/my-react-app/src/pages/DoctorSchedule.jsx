@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Calendar, Clock, User, Phone, CheckCircle, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api';
 
 export default function DoctorSchedule({ darkMode }) {
   const [schedule, setSchedule] = useState([]);
@@ -15,7 +16,7 @@ export default function DoctorSchedule({ darkMode }) {
 
       try {
         const date = new Date().toLocaleDateString('en-CA');
-        const response = await axios.post('http://127.0.0.1:5000/scheduler/optimized-queue', { 
+        const response = await axios.post(`${API_BASE_URL}/scheduler/optimized-queue`, { 
             token, 
             date 
         });

@@ -6,9 +6,9 @@ from app.crud.users_crud import get_user_by_uid, save_user
 auth_bp = Blueprint('auth', __name__)
 
 
-@auth_bp.route('/', methods=['GET'])
-def home():
-    return jsonify({"message": "Welcome to the WaitFree Clinic Backend!"})
+@auth_bp.route('/api/health', methods=['GET'])
+def health():
+    return jsonify({"status": "healthy", "message": "Welcome to the WaitFree Clinic Backend!"})
 
 
 @auth_bp.route('/verify-token', methods=['POST'])

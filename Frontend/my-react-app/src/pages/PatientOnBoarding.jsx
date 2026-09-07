@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api';
 import { User, Heart, Phone, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function PatientOnboarding({ darkMode = false }) {
@@ -126,7 +127,7 @@ export default function PatientOnboarding({ darkMode = false }) {
         submissionData.append(key, formData[key]);
       });
 
-      const response = await axios.post('http://127.0.0.1:5000/patient-form', submissionData, {
+      const response = await axios.post(`${API_BASE_URL}/patient-form`, submissionData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

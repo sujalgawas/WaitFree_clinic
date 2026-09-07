@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useSearchParams } from 'react-router-dom'; // Import useSearchParams
+import { API_BASE_URL } from '../config/api';
 import { MessageCircle, MapPin, Star, Clock, Loader2 } from 'lucide-react';
 
 export default function Search({ darkMode, setCurrentPage, setSelectedDoctor, setBookingData }) {
@@ -29,7 +30,7 @@ export default function Search({ darkMode, setCurrentPage, setSelectedDoctor, se
 
         console.log(`Fetching for: ${searchQuery} in ${city}`);
 
-        const response = await axios.post('http://127.0.0.1:5000/search', {
+        const response = await axios.post(`${API_BASE_URL}/search`, {
           query: searchQuery,
           location: { city: city }
         });

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 import { 
   MapPin, 
   Calendar, 
@@ -90,7 +91,7 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
   const fetchScheduleInfo = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await axios.post('http://127.0.0.1:5000/scheduler/patient-schedule', {
+      const response = await axios.post(`${API_BASE_URL}/scheduler/patient-schedule`, {
         token: token,
         doctor_uid: appointment.doctor_uid,
         doctor_name: appointment.doctor_name,
@@ -114,7 +115,7 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
       console.log('Fetching locations for doctor_uid:', appointment.doctor_uid);
       
       // Fetch both patient and clinic locations from backend
-      const response = await axios.post('http://127.0.0.1:5000/get-appointment-locations', {
+      const response = await axios.post(`${API_BASE_URL}/get-appointment-locations`, {
         token: token,
         doctor_uid: appointment.doctor_uid,
         doctor_name: appointment.doctor_name
@@ -221,7 +222,7 @@ export default function BookingTracker({ appointment, darkMode, onBack }) {
   const saveUserLocation = async (location) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://127.0.0.1:5000/update-location', {
+      await axios.post(`${API_BASE_URL}/update-location`, {
         token: token,
         lat: location.lat,
         lng: location.lng,

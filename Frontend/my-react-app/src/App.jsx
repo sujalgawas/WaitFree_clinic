@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthProvider } from './contexts/auth';
+import { API_BASE_URL } from './config/api';
 
 import Header from './components/Header';
 import LocationPopup from './components/LocationPopup';
@@ -150,7 +151,7 @@ function MainLayout() {
             try {
               const token = localStorage.getItem('token');
               if (token) {
-                await axios.post('http://127.0.0.1:5000/update-location', {
+                await axios.post(`${API_BASE_URL}/update-location`, {
                   ...locationData,
                   token: token
                 });

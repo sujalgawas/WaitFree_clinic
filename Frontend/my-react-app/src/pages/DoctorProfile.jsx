@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 import { 
   MapPin, Star, Calendar, Activity, CheckCircle, Clock, Heart, 
   Award, User, Sun, Moon, Lock, Navigation, Shield, Briefcase 
@@ -92,7 +93,7 @@ export default function DoctorProfile({ darkMode, setBookingData }) {
     const fetchDoctor = async () => {
       try {
         const realName = decodeURIComponent(name);
-        const response = await axios.post('http://127.0.0.1:5000/get-doctor-profile', {
+        const response = await axios.post(`${API_BASE_URL}/get-doctor-profile`, {
           doctor_name: realName
         });
         setDoctor(response.data.doctor);
@@ -180,7 +181,7 @@ export default function DoctorProfile({ darkMode, setBookingData }) {
     };
 
     try {
-      const response = await axios.post('http://127.0.0.1:5000/scheduler/add-to-queue', bookingPayload);
+      const response = await axios.post(`${API_BASE_URL}/scheduler/add-to-queue`, bookingPayload);
       
       if (response.status === 200) {
         setBookedSlots(prev => ({ ...prev, [selectedSlot]: true }));

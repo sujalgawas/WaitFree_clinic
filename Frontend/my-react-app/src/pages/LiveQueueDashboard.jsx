@@ -13,9 +13,10 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
 // API service
-const API_BASE = 'http://127.0.0.1:5000/doctor/queue';
+const API_BASE = `${API_BASE_URL}/doctor/queue`;
 const getHeaders = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 });

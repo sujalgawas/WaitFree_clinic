@@ -1,0 +1,46 @@
+# Render Blueprint specification for one-click hosting
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: waitfree-clinic
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 10000
+      # Stripe Configuration (Fill in values on Render dashboard)
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_BASIC_MONTHLY_PRICE_ID
+        sync: false
+      - key: STRIPE_BASIC_YEARLY_PRICE_ID
+        sync: false
+      - key: STRIPE_PREMIUM_MONTHLY_PRICE_ID
+        sync: false
+      - key: STRIPE_PREMIUM_YEARLY_PRICE_ID
+        sync: false
+      - key: STRIPE_PRO_MONTHLY_PRICE_ID
+        sync: false
+      - key: STRIPE_PRO_YEARLY_PRICE_ID
+        sync: false
+      # SMTP Email Service Configuration
+      - key: SMTP_SERVER
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      # Firebase Admin Credentials (paste the contents of serviceAccountKey.json as a raw JSON string)
+      - key: FIREBASE_CREDENTIALS_JSON
+        sync: false

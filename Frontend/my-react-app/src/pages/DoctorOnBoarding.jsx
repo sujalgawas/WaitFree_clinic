@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api';
 import { CheckCircle, Upload, MapPin, Clock, Calendar, User, Stethoscope, FileText, Building2, DollarSign, Award, AlertCircle } from 'lucide-react';
 
 export default function DoctorOnboarding() {
@@ -154,7 +155,7 @@ export default function DoctorOnboarding() {
         }
       });
 
-      const response = await axios.post('http://127.0.0.1:5000/doctor-form', submissionData, {
+      const response = await axios.post(`${API_BASE_URL}/doctor-form`, submissionData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

@@ -1,12 +1,9 @@
-flask 
+flask
 flask-cors
 firebase-admin
-firebase
 requests
 google-genai
 stripe
-dotenv
-<<<<<<< HEAD
+python-dotenv
 python-dateutil
-=======
->>>>>>> friend/main
+gunicorn

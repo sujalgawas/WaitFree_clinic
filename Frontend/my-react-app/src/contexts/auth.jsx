@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
 export const AuthContext = createContext({
   user: null,
@@ -32,7 +33,7 @@ export const AuthProvider = ({ children }) => {
 
       try {
         // 1. Call Backend to Verify Token
-        const response = await axios.post('http://127.0.0.1:5000/verify-token', { 
+        const response = await axios.post(`${API_BASE_URL}/verify-token`, { 
           token: storedToken 
         });
         console.log(token);
@@ -69,8 +70,8 @@ export const AuthProvider = ({ children }) => {
     try {
       // Determine endpoint based on type
       const endpoint = userType === 'doctor' 
-        ? 'http://127.0.0.1:5000/login-doctor'  // Make sure these match your server.py routes exactly
-        : 'http://127.0.0.1:5000/login-patient';
+        ? `${API_BASE_URL}/login-doctor`
+        : `${API_BASE_URL}/login-patient`;
       
       const response = await axios.post(endpoint, credentials);
       

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Users, Clock, TrendingUp, Video, MessageSquare, FileText, Settings } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
 const DoctorHome = ({ darkMode }) => {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ const DoctorHome = ({ darkMode }) => {
   const fetchDoctorData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:5000/doctor/dashboard', {
+      const response = await axios.get(`${API_BASE_URL}/doctor/dashboard`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStats(response.data.stats);

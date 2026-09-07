@@ -1,0 +1,33 @@
+# Version control
+.git
+.gitignore
+
+# Python virtual environment and caches
+Backend/venv
+Backend/env
+Backend/.venv
+Backend/__pycache__
+Backend/*/__pycache__
+Backend/*/*/__pycache__
+Backend/*.pyc
+Backend/*.pyo
+Backend/*.pyd
+Backend/.env
+
+# Node dependencies and build artifacts
+Frontend/my-react-app/node_modules
+Frontend/my-react-app/dist
+Frontend/node_modules
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# OS and Editor files
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+*.sublime-project
+*.sublime-workspace
