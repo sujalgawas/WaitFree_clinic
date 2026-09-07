@@ -88,6 +88,7 @@ def init_firebase():
         candidate_paths = [
             os.environ.get('FIREBASE_CREDENTIALS_PATH'),
             os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'),
+            '/etc/secrets/FIREBASE_CREDENTIALS_JSON',
             '/etc/secrets/serviceAccountKey.json',
             '/etc/secrets/serviceAccountKey',
             './serviceAccountKey.json',
@@ -96,18 +97,33 @@ def init_firebase():
             os.path.join(os.getcwd(), 'Backend', 'serviceAccountKey.json')
         ]
 
-        # Also search for any json file mounted in Render's /etc/secrets directory
+        # Search for ANY file mounted in Render's /etc/secrets directory
         if os.path.exists('/etc/secrets'):
-            candidate_paths.extend(glob.glob('/etc/secrets/*.json'))
+            for secret_file in glob.glob('/etc/secrets/*'):
+                if os.path.isfile(secret_file) and secret_file not in candidate_paths:
+                    candidate_paths.append(secret_file)
 
         for path in candidate_paths:
-            if path and os.path.exists(path):
+            if path and os.path.exists(path) and os.path.isfile(path):
+                # Try 1: Load certificate directly from file path
                 try:
                     cred = credentials.Certificate(path)
-                    sys.stderr.write(f"[Firebase] Successfully loaded credentials from file: {path}\n")
+                    sys.stderr.write(f"[Firebase] Successfully loaded credentials from file path: {path}\n")
                     break
-                except Exception as e:
-                    sys.stderr.write(f"[Firebase] Failed loading credentials from {path}: {e}\n")
+                except Exception as e1:
+                    sys.stderr.write(f"[Firebase] Path load failed for {path}: {e1}, attempting content parsing...\n")
+
+                # Try 2: Read file content and parse with lenient parser (handles JSON, unescaped newlines, base64)
+                try:
+                    with open(path, 'r', encoding='utf-8') as f:
+                        file_content = f.read()
+                    parsed = _parse_credential_dict(file_content)
+                    if parsed:
+                        cred = credentials.Certificate(parsed)
+                        sys.stderr.write(f"[Firebase] Successfully parsed credentials from file content: {path}\n")
+                        break
+                except Exception as e2:
+                    sys.stderr.write(f"[Firebase] Content parse failed for {path}: {e2}\n")
 
     if not cred:
         # Diagnostic message for debugging in Render logs
