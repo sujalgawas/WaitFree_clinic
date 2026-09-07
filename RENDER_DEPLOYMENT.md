@@ -68,8 +68,22 @@ If you prefer setting up the Web Service manually:
    - `FRONTEND_URL`: `https://<your-render-app-name>.onrender.com`
 6. Click **Create Web Service**.
 
-> [!TIP]
-> **Alternative for Firebase Key**: Instead of `FIREBASE_CREDENTIALS_JSON`, you can also click **Secret Files** on Render, name the file `serviceAccountKey.json`, set the path to `/etc/secrets/serviceAccountKey.json`, and upload the file directly. The backend automatically searches `/etc/secrets/serviceAccountKey.json`.
+> [!IMPORTANT]
+> **How to Add Firebase Credentials on Render (Choose Any 1 of 2 Methods)**:
+>
+> **Method A (Easiest & Recommended: Secret File)**:
+> 1. In the Render Dashboard, go to your service.
+> 2. Click the **Environment** tab on the left.
+> 3. Scroll down to **Secret Files** and click **Add Secret File**.
+> 4. Filename: `serviceAccountKey.json`
+> 5. Upload or paste the contents of `Backend/serviceAccountKey.json`.
+> 6. Click **Save Changes**. The backend automatically detects `/etc/secrets/serviceAccountKey.json`!
+>
+> **Method B (Environment Variable)**:
+> 1. Under **Environment Variables**, add:
+>    - Key: `FIREBASE_CREDENTIALS_JSON`
+>    - Value: Paste the contents of `Backend/serviceAccountKey.json` (or the Base64 string).
+> 2. Click **Save Changes**.
 
 ---
 
